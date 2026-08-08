@@ -1,8 +1,9 @@
 import json
 import sqlite3
+from unittest.mock import patch
 
 from src import db
-from src.collector import collect_page, parse_repository_node
+from src.collector import collect_page, collect_total, parse_repository_node
 
 
 def repository_node(repository_id="R_1", language=None):
@@ -104,3 +105,80 @@ def test_collect_page_resumes_from_saved_cursor():
         "cursor": "cursor-2",
         "total_collected": 11,
     }
+
+
+class SequencedFakeClient:
+    """Simula a paginação real da busca do GitHub: cada página devolve até
+    `perPage` repositórios a partir do cursor (índice), respeitando o total
+    de repositórios "disponíveis" na busca simulada."""
+
+    def __init__(self, total_available):
+        self._total_available = total_available
+        self.calls = []
+
+    def execute(self, query, variables):
+        per_page = variables["perPage"]
+        after = variables["after"]
+        start = int(after) if after else 0
+        self.calls.append(per_page)
+
+        end = min(start + per_page, self._total_available)
+        nodes = [repository_node(f"R_{i}") for i in range(start, end)]
+        return {
+            "search": {
+                "repositoryCount": self._total_available,
+                "pageInfo": {
+                    "hasNextPage": end < self._total_available,
+                    "endCursor": str(end),
+                },
+                "nodes": nodes,
+            }
+        }
+
+
+def test_collect_total_accumulates_across_batches():
+    connection = sqlite3.connect(":memory:")
+    db.init_db(connection)
+    client = SequencedFakeClient(total_available=1000)
+
+    with patch("src.collector.time.sleep"):
+        total_collected = collect_total(client, connection, total=100, batch_size=25)
+
+    assert total_collected == 100
+    assert db.count_repositories(connection) == 100
+    assert client.calls == [25, 25, 25, 25]
+
+
+def test_collect_total_clamps_last_batch_to_remaining():
+    connection = sqlite3.connect(":memory:")
+    db.init_db(connection)
+    client = SequencedFakeClient(total_available=1000)
+
+    with patch("src.collector.time.sleep"):
+        collect_total(client, connection, total=90, batch_size=25)
+
+    assert client.calls == [25, 25, 25, 15]
+
+
+def test_collect_total_stops_early_when_search_runs_out_of_results():
+    connection = sqlite3.connect(":memory:")
+    db.init_db(connection)
+    client = SequencedFakeClient(total_available=10)
+
+    with patch("src.collector.time.sleep"):
+        total_collected = collect_total(client, connection, total=100, batch_size=25)
+
+    assert total_collected == 10
+    assert db.count_repositories(connection) == 10
+
+
+def test_collect_total_is_noop_when_already_met():
+    connection = sqlite3.connect(":memory:")
+    db.init_db(connection)
+    db.save_collection_state(connection, cursor="cursor-x", total_collected=100)
+    client = SequencedFakeClient(total_available=1000)
+
+    total_collected = collect_total(client, connection, total=100, batch_size=25)
+
+    assert total_collected == 100
+    assert client.calls == []
