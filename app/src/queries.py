@@ -21,6 +21,8 @@ query RepositorySearch($searchQuery: String!, $perPage: Int!, $after: String) {
         stargazerCount
         createdAt
         pushedAt
+        isFork
+        isArchived
         primaryLanguage {
           name
         }
