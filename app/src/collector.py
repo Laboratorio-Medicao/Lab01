@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import time
 
 from src.config import get_github_token
 from src.db import (
@@ -18,6 +19,16 @@ from src.queries import (
 )
 
 logger = logging.getLogger(__name__)
+
+# A API GraphQL do GitHub responde 502 (Bad Gateway) de forma consistente para
+# esta query com perPage >= 40 — o custo de calcular totalCount de
+# pullRequests/releases/issues para muitos repositórios na mesma resposta
+# parece estourar o timeout do lado deles. Validado empiricamente em
+# 2026-08-08 (200 OK até perPage=35, 502 a partir de perPage=40). Não é um
+# limite documentado pela API, só o que se mostrou estável na prática — ver
+# README.md ("Rate limit e tamanho de página") para o detalhe completo.
+DEFAULT_BATCH_SIZE = 25
+BATCH_DELAY_SECONDS = 1.0
 
 
 def parse_repository_node(node):
@@ -76,6 +87,29 @@ def collect_page(client, connection, per_page):
     return repositories
 
 
+def collect_total(client, connection, total, batch_size):
+    while True:
+        total_collected = get_collection_state(connection)["total_collected"]
+        if total_collected >= total:
+            break
+
+        page_size = min(batch_size, total - total_collected)
+        repositories = collect_page(client, connection, page_size)
+        if not repositories:
+            logger.warning(
+                "página vazia retornada antes de atingir a meta (total_collected=%s, meta=%s); "
+                "encerrando (provável fim dos resultados da busca)",
+                total_collected,
+                total,
+            )
+            break
+
+        if get_collection_state(connection)["total_collected"] < total:
+            time.sleep(BATCH_DELAY_SECONDS)
+
+    return get_collection_state(connection)["total_collected"]
+
+
 def _page_size(raw_value):
     parsed_value = int(raw_value)
     if not 1 <= parsed_value <= MAX_GITHUB_SEARCH_PAGE_SIZE:
@@ -86,11 +120,28 @@ def _page_size(raw_value):
     return parsed_value
 
 
+def _total(raw_value):
+    parsed_value = int(raw_value)
+    if parsed_value < 1:
+        raise argparse.ArgumentTypeError("--total deve ser maior ou igual a 1")
+    return parsed_value
+
+
 def build_arg_parser():
     parser = argparse.ArgumentParser(
         description="Coleta repositórios populares do GitHub via GraphQL."
     )
-    parser.add_argument("--per-page", type=_page_size, default=10)
+    parser.add_argument("--per-page", type=_page_size, default=DEFAULT_BATCH_SIZE)
+    parser.add_argument(
+        "--total",
+        type=_total,
+        default=None,
+        help=(
+            "quantidade total de repositórios a coletar, buscando em lotes de "
+            "--per-page até atingir a meta (ex.: --total 100, --total 1000). "
+            "Se omitido, coleta uma única página."
+        ),
+    )
     return parser
 
 
@@ -104,14 +155,20 @@ def main():
     init_db(connection)
 
     try:
-        repositories = collect_page(client, connection, args.per_page)
-        for repository in repositories:
+        if args.total is not None:
+            total_collected = collect_total(client, connection, args.total, args.per_page)
             logger.info(
-                "  %s/%s — %s stars",
-                repository["owner"],
-                repository["name"],
-                repository["stargazer_count"],
+                "coleta finalizada: total_collected=%s (meta=%s)", total_collected, args.total
             )
+        else:
+            repositories = collect_page(client, connection, args.per_page)
+            for repository in repositories:
+                logger.info(
+                    "  %s/%s — %s stars",
+                    repository["owner"],
+                    repository["name"],
+                    repository["stargazer_count"],
+                )
     finally:
         connection.close()
 
