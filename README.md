@@ -92,6 +92,10 @@ python -m src.collector                        # 1 lote de 25 repos
 python -m src.collector --per-page 25 --total 100   # S01: 100 repos (4 lotes de 25)
 python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginação completa)
 
+# Validação cruzada RQ01/RQ02 contra a API REST do GitHub (Issue #4)
+# gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
+python -m src.validate_rq01_rq02 --sample-size 8
+
 # Export para CSV
 python src/export.py
 

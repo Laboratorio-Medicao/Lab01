@@ -15,6 +15,8 @@ def sample_repository(repository_id="R_1", stargazer_count=100):
         "stargazer_count": stargazer_count,
         "created_at": "2020-01-01T00:00:00Z",
         "pushed_at": "2024-01-01T00:00:00Z",
+        "is_fork": 0,
+        "is_archived": 0,
         "primary_language": "Python",
         "merged_pull_requests": 5,
         "releases_count": 2,
@@ -87,6 +89,62 @@ def test_upsert_repositories_handles_multiple_distinct_rows():
     )
 
     assert db.count_repositories(connection) == 2
+
+
+def test_init_db_migrates_missing_columns_on_pre_existing_table():
+    """Reproduz o cenário real: um repos.db criado antes de is_fork/is_archived
+    existirem, com dados já persistidos, precisa ganhar as colunas novas sem
+    perder as linhas existentes."""
+    connection = make_connection()
+    connection.execute(
+        """
+        CREATE TABLE repositories (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            owner TEXT NOT NULL,
+            stargazer_count INTEGER,
+            created_at TEXT,
+            pushed_at TEXT,
+            primary_language TEXT,
+            merged_pull_requests INTEGER,
+            releases_count INTEGER,
+            open_issues INTEGER,
+            closed_issues INTEGER,
+            raw_json TEXT,
+            collected_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+        """
+    )
+    connection.execute(
+        "INSERT INTO repositories (id, name, owner, stargazer_count) VALUES "
+        "('R_1', 'example', 'octocat', 100)"
+    )
+    connection.commit()
+
+    db.init_db(connection)
+
+    columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(repositories)").fetchall()
+    }
+    assert {"is_fork", "is_archived"}.issubset(columns)
+    assert db.count_repositories(connection) == 1
+    is_fork, is_archived = connection.execute(
+        "SELECT is_fork, is_archived FROM repositories WHERE id = 'R_1'"
+    ).fetchone()
+    assert is_fork is None
+    assert is_archived is None
+
+
+def test_init_db_migration_is_idempotent():
+    connection = make_connection()
+    db.init_db(connection)
+
+    db.init_db(connection)
+
+    columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(repositories)").fetchall()
+    }
+    assert {"is_fork", "is_archived"}.issubset(columns)
 
 
 def test_get_connection_creates_parent_directory(tmp_path):
