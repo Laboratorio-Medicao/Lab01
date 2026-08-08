@@ -1,0 +1,29 @@
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Dados locais (banco não sobe, CSV sobe)
+data/repos.db
+
+# Variáveis de ambiente
+.env
+*.env
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
