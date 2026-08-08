@@ -69,11 +69,22 @@ GitHub GraphQL API
 > Instruções completas serão adicionadas ao longo das sprints.
 
 ```bash
-# Dependências
-pip install -r requirements.txt
+cd app
+
+# Configuração do token (uma vez)
+cp .env.example .env
+# edite .env e defina GITHUB_TOKEN=<token com escopo public_repo>
+
+# Dependências de desenvolvimento (runtime não tem dependências externas)
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+
+# Testes automatizados
+pytest
 
 # Coleta (salva em data/repos.db, retomável se interrompida)
-python src/collector.py
+python -m src.collector
+python -m src.collector --per-page 25
 
 # Export para CSV
 python src/export.py
