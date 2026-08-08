@@ -1,0 +1,2 @@
+# Nenhuma dependência de terceiros: coleta usa apenas a biblioteca padrão do
+# Python (urllib, sqlite3, json, argparse). Ver README.md para justificativa.
