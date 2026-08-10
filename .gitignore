@@ -13,9 +13,10 @@ build/
 .venv/
 venv/
 env/
+.pytest_cache/
 
 # Dados locais (banco não sobe, CSV sobe)
-data/repos.db
+app/data/repos.db
 
 # Variáveis de ambiente
 .env
