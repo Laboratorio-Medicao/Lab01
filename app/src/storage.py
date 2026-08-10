@@ -108,3 +108,30 @@ def upsert_repositories(connection, repos):
 
 def count_repositories(connection):
     return connection.execute("SELECT COUNT(*) FROM repositories").fetchone()[0]
+
+
+EXPORT_COLUMNS = [
+    "id",
+    "name",
+    "owner",
+    "stargazer_count",
+    "created_at",
+    "pushed_at",
+    "is_fork",
+    "is_archived",
+    "primary_language",
+    "merged_pull_requests",
+    "releases_count",
+    "open_issues",
+    "closed_issues",
+    "collected_at",
+]
+
+
+def iter_repositories_for_export(connection):
+    columns_sql = ", ".join(EXPORT_COLUMNS)
+    cursor = connection.execute(
+        f"SELECT {columns_sql} FROM repositories ORDER BY stargazer_count DESC"
+    )
+    for row in cursor:
+        yield dict(zip(EXPORT_COLUMNS, row))

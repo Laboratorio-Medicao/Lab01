@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from src.github_client import GitHubGraphQLClient, GraphQLRequestError
+from src.client import GitHubGraphQLClient, GraphQLRequestError
 
 
 class FakeResponse:
@@ -39,7 +39,7 @@ def http_error(code, headers=None, body=b'{"message": "error"}'):
 def test_execute_returns_data_on_success(monkeypatch):
     payload = {"data": {"rateLimit": rate_limit_payload(), "search": {"nodes": []}}}
     monkeypatch.setattr(
-        "src.github_client.urllib.request.urlopen",
+        "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
 
@@ -53,7 +53,7 @@ def test_execute_returns_data_on_success(monkeypatch):
 def test_execute_raises_on_graphql_errors(monkeypatch):
     payload = {"errors": [{"message": "boom"}]}
     monkeypatch.setattr(
-        "src.github_client.urllib.request.urlopen",
+        "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
 
@@ -65,7 +65,7 @@ def test_execute_raises_on_graphql_errors(monkeypatch):
 
 def test_execute_raises_on_missing_data_field(monkeypatch):
     monkeypatch.setattr(
-        "src.github_client.urllib.request.urlopen",
+        "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse({}),
     )
 
@@ -83,11 +83,11 @@ def test_execute_sleeps_until_reset_when_rate_limit_low(monkeypatch):
         "data": {"rateLimit": rate_limit_payload(remaining=1, reset_at=reset_at), "search": {}}
     }
     monkeypatch.setattr(
-        "src.github_client.urllib.request.urlopen",
+        "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
     sleep_calls = []
-    monkeypatch.setattr("src.github_client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", rate_limit_threshold=100)
     client.execute("query { }")
@@ -99,11 +99,11 @@ def test_execute_sleeps_until_reset_when_rate_limit_low(monkeypatch):
 def test_execute_does_not_sleep_when_rate_limit_healthy(monkeypatch):
     payload = {"data": {"rateLimit": rate_limit_payload(remaining=4999), "search": {}}}
     monkeypatch.setattr(
-        "src.github_client.urllib.request.urlopen",
+        "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
     sleep_calls = []
-    monkeypatch.setattr("src.github_client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", rate_limit_threshold=100)
     client.execute("query { }")
@@ -121,8 +121,8 @@ def test_execute_retries_on_server_error_then_succeeds(monkeypatch):
             raise http_error(503)
         return FakeResponse(payload)
 
-    monkeypatch.setattr("src.github_client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.github_client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.client.time.sleep", lambda seconds: None)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
     data = client.execute("query { }")
@@ -141,9 +141,9 @@ def test_execute_retries_using_retry_after_header(monkeypatch):
             raise http_error(403, headers={"Retry-After": "12"})
         return FakeResponse(payload)
 
-    monkeypatch.setattr("src.github_client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
     sleep_calls = []
-    monkeypatch.setattr("src.github_client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
     client.execute("query { }")
@@ -155,7 +155,7 @@ def test_execute_does_not_retry_on_permission_denied_403(monkeypatch):
     def fake_urlopen(request, timeout):
         raise http_error(403)
 
-    monkeypatch.setattr("src.github_client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
 
@@ -170,7 +170,7 @@ def test_execute_does_not_retry_on_unauthorized(monkeypatch):
         attempts["count"] += 1
         raise http_error(401)
 
-    monkeypatch.setattr("src.github_client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
 
@@ -187,8 +187,8 @@ def test_execute_gives_up_after_max_attempts(monkeypatch):
         attempts["count"] += 1
         raise http_error(503)
 
-    monkeypatch.setattr("src.github_client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.github_client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.client.time.sleep", lambda seconds: None)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
 

@@ -1,6 +1,6 @@
 import sqlite3
 
-from src import db
+from src import storage
 
 
 def make_connection():
@@ -29,28 +29,28 @@ def sample_repository(repository_id="R_1", stargazer_count=100):
 def test_init_db_creates_default_collection_state():
     connection = make_connection()
 
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    assert db.get_collection_state(connection) == {"cursor": None, "total_collected": 0}
+    assert storage.get_collection_state(connection) == {"cursor": None, "total_collected": 0}
 
 
 def test_init_db_does_not_reset_existing_state():
     connection = make_connection()
-    db.init_db(connection)
-    db.save_collection_state(connection, cursor="abc", total_collected=10)
+    storage.init_db(connection)
+    storage.save_collection_state(connection, cursor="abc", total_collected=10)
 
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    assert db.get_collection_state(connection) == {"cursor": "abc", "total_collected": 10}
+    assert storage.get_collection_state(connection) == {"cursor": "abc", "total_collected": 10}
 
 
 def test_save_and_get_collection_state_roundtrip():
     connection = make_connection()
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    db.save_collection_state(connection, cursor="Y3Vyc29yOjEw", total_collected=20)
+    storage.save_collection_state(connection, cursor="Y3Vyc29yOjEw", total_collected=20)
 
-    assert db.get_collection_state(connection) == {
+    assert storage.get_collection_state(connection) == {
         "cursor": "Y3Vyc29yOjEw",
         "total_collected": 20,
     }
@@ -58,21 +58,21 @@ def test_save_and_get_collection_state_roundtrip():
 
 def test_upsert_repositories_inserts_new_rows():
     connection = make_connection()
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    db.upsert_repositories(connection, [sample_repository()])
+    storage.upsert_repositories(connection, [sample_repository()])
 
-    assert db.count_repositories(connection) == 1
+    assert storage.count_repositories(connection) == 1
 
 
 def test_upsert_repositories_updates_existing_row_in_place():
     connection = make_connection()
-    db.init_db(connection)
-    db.upsert_repositories(connection, [sample_repository(stargazer_count=100)])
+    storage.init_db(connection)
+    storage.upsert_repositories(connection, [sample_repository(stargazer_count=100)])
 
-    db.upsert_repositories(connection, [sample_repository(stargazer_count=200)])
+    storage.upsert_repositories(connection, [sample_repository(stargazer_count=200)])
 
-    assert db.count_repositories(connection) == 1
+    assert storage.count_repositories(connection) == 1
     stored_stargazer_count = connection.execute(
         "SELECT stargazer_count FROM repositories WHERE id = 'R_1'"
     ).fetchone()[0]
@@ -81,14 +81,14 @@ def test_upsert_repositories_updates_existing_row_in_place():
 
 def test_upsert_repositories_handles_multiple_distinct_rows():
     connection = make_connection()
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    db.upsert_repositories(
+    storage.upsert_repositories(
         connection,
         [sample_repository(repository_id="R_1"), sample_repository(repository_id="R_2")],
     )
 
-    assert db.count_repositories(connection) == 2
+    assert storage.count_repositories(connection) == 2
 
 
 def test_init_db_migrates_missing_columns_on_pre_existing_table():
@@ -121,13 +121,13 @@ def test_init_db_migrates_missing_columns_on_pre_existing_table():
     )
     connection.commit()
 
-    db.init_db(connection)
+    storage.init_db(connection)
 
     columns = {
         row[1] for row in connection.execute("PRAGMA table_info(repositories)").fetchall()
     }
     assert {"is_fork", "is_archived"}.issubset(columns)
-    assert db.count_repositories(connection) == 1
+    assert storage.count_repositories(connection) == 1
     is_fork, is_archived = connection.execute(
         "SELECT is_fork, is_archived FROM repositories WHERE id = 'R_1'"
     ).fetchone()
@@ -137,9 +137,9 @@ def test_init_db_migrates_missing_columns_on_pre_existing_table():
 
 def test_init_db_migration_is_idempotent():
     connection = make_connection()
-    db.init_db(connection)
+    storage.init_db(connection)
 
-    db.init_db(connection)
+    storage.init_db(connection)
 
     columns = {
         row[1] for row in connection.execute("PRAGMA table_info(repositories)").fetchall()
@@ -150,7 +150,7 @@ def test_init_db_migration_is_idempotent():
 def test_get_connection_creates_parent_directory(tmp_path):
     db_path = tmp_path / "nested" / "repos.db"
 
-    connection = db.get_connection(db_path)
+    connection = storage.get_connection(db_path)
     connection.close()
 
     assert db_path.parent.exists()
