@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS repositories (
     stargazer_count INTEGER,
     created_at TEXT,
     pushed_at TEXT,
+    is_fork INTEGER,
+    is_archived INTEGER,
     primary_language TEXT,
     merged_pull_requests INTEGER,
     releases_count INTEGER,
@@ -35,8 +37,18 @@ def get_connection(db_path=DB_PATH):
     return connection
 
 
+def _migrate_missing_columns(connection):
+    existing_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(repositories)").fetchall()
+    }
+    for column in ("is_fork", "is_archived"):
+        if column not in existing_columns:
+            connection.execute(f"ALTER TABLE repositories ADD COLUMN {column} INTEGER")
+
+
 def init_db(connection):
     connection.executescript(SCHEMA)
+    _migrate_missing_columns(connection)
     connection.execute(
         "INSERT OR IGNORE INTO collection_state (id, cursor, total_collected) VALUES (1, NULL, 0)"
     )
@@ -67,12 +79,12 @@ def upsert_repositories(connection, repos):
         """
         INSERT INTO repositories (
             id, name, owner, stargazer_count, created_at, pushed_at,
-            primary_language, merged_pull_requests, releases_count,
-            open_issues, closed_issues, raw_json
+            is_fork, is_archived, primary_language, merged_pull_requests,
+            releases_count, open_issues, closed_issues, raw_json
         ) VALUES (
             :id, :name, :owner, :stargazer_count, :created_at, :pushed_at,
-            :primary_language, :merged_pull_requests, :releases_count,
-            :open_issues, :closed_issues, :raw_json
+            :is_fork, :is_archived, :primary_language, :merged_pull_requests,
+            :releases_count, :open_issues, :closed_issues, :raw_json
         )
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
@@ -80,6 +92,8 @@ def upsert_repositories(connection, repos):
             stargazer_count = excluded.stargazer_count,
             created_at = excluded.created_at,
             pushed_at = excluded.pushed_at,
+            is_fork = excluded.is_fork,
+            is_archived = excluded.is_archived,
             primary_language = excluded.primary_language,
             merged_pull_requests = excluded.merged_pull_requests,
             releases_count = excluded.releases_count,
