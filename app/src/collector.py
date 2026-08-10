@@ -41,6 +41,8 @@ def parse_repository_node(node):
         "stargazer_count": node["stargazerCount"],
         "created_at": node["createdAt"],
         "pushed_at": node["pushedAt"],
+        "is_fork": int(node["isFork"]),
+        "is_archived": int(node["isArchived"]),
         "primary_language": language["name"] if language else None,
         "merged_pull_requests": node["mergedPullRequests"]["totalCount"],
         "releases_count": node["releases"]["totalCount"],

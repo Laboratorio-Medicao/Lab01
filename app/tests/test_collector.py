@@ -6,7 +6,7 @@ from src import db
 from src.collector import collect_page, collect_total, parse_repository_node
 
 
-def repository_node(repository_id="R_1", language=None):
+def repository_node(repository_id="R_1", language=None, is_fork=False, is_archived=False):
     return {
         "id": repository_id,
         "name": "example",
@@ -14,6 +14,8 @@ def repository_node(repository_id="R_1", language=None):
         "stargazerCount": 42,
         "createdAt": "2020-01-01T00:00:00Z",
         "pushedAt": "2024-01-01T00:00:00Z",
+        "isFork": is_fork,
+        "isArchived": is_archived,
         "primaryLanguage": {"name": language} if language else None,
         "mergedPullRequests": {"totalCount": 3},
         "releases": {"totalCount": 1},
@@ -32,7 +34,16 @@ def test_parse_repository_node_maps_all_fields():
     assert parsed["releases_count"] == 1
     assert parsed["open_issues"] == 2
     assert parsed["closed_issues"] == 8
+    assert parsed["is_fork"] == 0
+    assert parsed["is_archived"] == 0
     assert json.loads(parsed["raw_json"])["id"] == "R_1"
+
+
+def test_parse_repository_node_maps_fork_and_archived_flags():
+    parsed = parse_repository_node(repository_node(is_fork=True, is_archived=True))
+
+    assert parsed["is_fork"] == 1
+    assert parsed["is_archived"] == 1
 
 
 def test_parse_repository_node_handles_missing_language():
