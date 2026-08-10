@@ -15,14 +15,11 @@ data em que este script de validação roda), garantindo reprodutibilidade.
 """
 
 import argparse
-import json
-import time
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 from src.config import get_github_token
+from src.rest_client import RestClient, RestNotFoundError
 from src.storage import get_connection
 
 DAYS_PER_YEAR = 365.25
@@ -33,24 +30,9 @@ CANDIDATE_POOL_MULTIPLIER = 3
 MIN_SAMPLE_SIZE = 5
 OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validacao-rq01-rq02.md"
 
-DEFAULT_MAX_ATTEMPTS = 3
-DEFAULT_RETRY_BACKOFF_BASE_SECONDS = 2.0
-RETRYABLE_SERVER_ERROR_CODES = {500, 502, 503, 504}
-RETRYABLE_THROTTLING_CODES = {403, 429}
-
-
-class RestNotFoundError(RuntimeError):
-    pass
-
 
 class InsufficientSampleError(RuntimeError):
     pass
-
-
-class _RetryableTransportError(RuntimeError):
-    def __init__(self, message, retry_after_seconds=None):
-        super().__init__(message)
-        self.retry_after_seconds = retry_after_seconds
 
 
 def _parse_iso8601(value):
@@ -93,95 +75,25 @@ def fetch_candidate_pool(connection, pool_size):
     ]
 
 
-def _rest_get(url, token, max_attempts=DEFAULT_MAX_ATTEMPTS):
-    """GET com retry/backoff para 5xx e 403/429 (mesmo padrão de retry do
-    GitHubGraphQLClient em client.py, adaptado para REST). 404 nunca é
-    retentável — vira RestNotFoundError imediatamente (ver validate_candidates)."""
-    last_error = None
-    for attempt in range(1, max_attempts + 1):
-        try:
-            return _rest_get_once(url, token)
-        except _RetryableTransportError as error:
-            last_error = error
-            if attempt == max_attempts:
-                break
-            delay_seconds = error.retry_after_seconds
-            if delay_seconds is None:
-                delay_seconds = DEFAULT_RETRY_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
-            time.sleep(delay_seconds)
-    raise RuntimeError(str(last_error)) from last_error
-
-
-def _rest_get_once(url, token):
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "lab01-validation-script",
-        },
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8")
-        if error.code == 404:
-            raise RestNotFoundError(f"HTTP 404 em {url}: {body}") from error
-
-        retry_after_seconds = _parse_retry_after_header(error.headers)
-        is_server_error = error.code in RETRYABLE_SERVER_ERROR_CODES
-        is_throttled = error.code in RETRYABLE_THROTTLING_CODES and (
-            error.code == 429 or retry_after_seconds is not None
-        )
-        message = f"HTTP {error.code} em {url}: {body}"
-        if is_server_error or is_throttled:
-            raise _RetryableTransportError(message, retry_after_seconds=retry_after_seconds) from error
-        raise RuntimeError(message) from error
-
-
-def _parse_retry_after_header(headers):
-    if not headers:
-        return None
-    value = headers.get("Retry-After")
-    if value is None:
-        return None
-    try:
-        return max(float(value), 1.0)
-    except (TypeError, ValueError):
-        return None
-
-
-def fetch_rest_created_at(owner, name, token):
-    data = _rest_get(f"https://api.github.com/repos/{owner}/{name}", token)
+def fetch_rest_created_at(owner, name, client):
+    data = client.get(f"https://api.github.com/repos/{owner}/{name}")
     return data["created_at"]
 
 
-def fetch_merged_pr_count_via_rest_pagination(owner, name, token):
+def fetch_merged_pr_count_via_rest_pagination(owner, name, client):
     """Conta PRs merged paginando /pulls?state=closed e checando merged_at.
 
     Mais lento que a Search API, mas evita a defasagem de indexação conhecida
     da Search API (ver docs/metodologia.md) — é a fonte da verdade para a
     conferência cruzada, não uma estimativa.
     """
-    merged_count = 0
-    page = 1
-    while True:
-        url = (
-            f"https://api.github.com/repos/{owner}/{name}/pulls"
-            f"?state=closed&per_page=100&page={page}"
-        )
-        page_data = _rest_get(url, token)
-        if not page_data:
-            break
-        merged_count += sum(1 for pr in page_data if pr.get("merged_at") is not None)
-        if len(page_data) < 100:
-            break
-        page += 1
-    return merged_count
+    pulls = client.get_all_pages(
+        f"https://api.github.com/repos/{owner}/{name}/pulls?state=closed"
+    )
+    return sum(1 for pr in pulls if pr.get("merged_at") is not None)
 
 
-def validate_candidates(candidates, sample_size, token):
+def validate_candidates(candidates, sample_size, client):
     results = []
     skipped = []
     for repo in candidates:
@@ -190,9 +102,9 @@ def validate_candidates(candidates, sample_size, token):
 
         label = f"{repo['owner']}/{repo['name']}"
         try:
-            rest_created_at = fetch_rest_created_at(repo["owner"], repo["name"], token)
+            rest_created_at = fetch_rest_created_at(repo["owner"], repo["name"], client)
             rest_merged_count = fetch_merged_pr_count_via_rest_pagination(
-                repo["owner"], repo["name"], token
+                repo["owner"], repo["name"], client
             )
         except RestNotFoundError:
             # Observado em ao menos um repositório da amostra (has_issues=false no
@@ -256,6 +168,7 @@ def build_arg_parser():
 def main():
     args = build_arg_parser().parse_args()
     token = get_github_token()
+    client = RestClient(token)
     connection = get_connection()
 
     try:
@@ -265,7 +178,7 @@ def main():
         if not candidates:
             raise RuntimeError("nenhum repositório encontrado em data/repos.db — rode o coletor antes")
 
-        results, skipped = validate_candidates(candidates, args.sample_size, token)
+        results, skipped = validate_candidates(candidates, args.sample_size, client)
     finally:
         connection.close()
 
