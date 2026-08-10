@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.config import get_github_token
-from src.db import get_connection
+from src.storage import get_connection
 
 DAYS_PER_YEAR = 365.25
 DEFAULT_SAMPLE_SIZE = 8
@@ -95,7 +95,7 @@ def fetch_candidate_pool(connection, pool_size):
 
 def _rest_get(url, token, max_attempts=DEFAULT_MAX_ATTEMPTS):
     """GET com retry/backoff para 5xx e 403/429 (mesmo padrão de retry do
-    GitHubGraphQLClient em github_client.py, adaptado para REST). 404 nunca é
+    GitHubGraphQLClient em client.py, adaptado para REST). 404 nunca é
     retentável — vira RestNotFoundError imediatamente (ver validate_candidates)."""
     last_error = None
     for attempt in range(1, max_attempts + 1):

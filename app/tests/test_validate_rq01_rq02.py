@@ -4,7 +4,7 @@ import urllib.error
 
 import pytest
 
-from src import db
+from src import storage
 from src.validate_rq01_rq02 import (
     InsufficientSampleError,
     RestNotFoundError,
@@ -81,8 +81,8 @@ def repository_row(repository_id, merged_pull_requests):
 
 def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
-    db.upsert_repositories(
+    storage.init_db(connection)
+    storage.upsert_repositories(
         connection,
         [
             repository_row("R_1", merged_pull_requests=50),

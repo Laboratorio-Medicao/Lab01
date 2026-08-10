@@ -4,15 +4,15 @@ import logging
 import time
 
 from src.config import get_github_token
-from src.db import (
+from src.storage import (
     get_collection_state,
     get_connection,
     init_db,
     save_collection_state,
     upsert_repositories,
 )
-from src.github_client import GitHubGraphQLClient
-from src.queries import (
+from src.client import GitHubGraphQLClient
+from src.query import (
     MAX_GITHUB_SEARCH_PAGE_SIZE,
     REPOSITORY_SEARCH_QUERY,
     TOP_STARRED_REPOSITORIES_SEARCH_QUERY,

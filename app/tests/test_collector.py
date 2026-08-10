@@ -2,7 +2,7 @@ import json
 import sqlite3
 from unittest.mock import patch
 
-from src import db
+from src import storage
 from src.collector import collect_page, collect_total, parse_repository_node
 
 
@@ -62,7 +62,7 @@ class FakeClient:
 
 def test_collect_page_persists_repositories_and_advances_cursor():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
+    storage.init_db(connection)
     client = FakeClient(
         {
             "repositoryCount": 2,
@@ -74,8 +74,8 @@ def test_collect_page_persists_repositories_and_advances_cursor():
     repositories = collect_page(client, connection, per_page=2)
 
     assert len(repositories) == 2
-    assert db.count_repositories(connection) == 2
-    assert db.get_collection_state(connection) == {
+    assert storage.count_repositories(connection) == 2
+    assert storage.get_collection_state(connection) == {
         "cursor": "cursor-1",
         "total_collected": 2,
     }
@@ -83,7 +83,7 @@ def test_collect_page_persists_repositories_and_advances_cursor():
 
 def test_collect_page_filters_out_null_nodes():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
+    storage.init_db(connection)
     client = FakeClient(
         {
             "repositoryCount": 1,
@@ -95,13 +95,13 @@ def test_collect_page_filters_out_null_nodes():
     repositories = collect_page(client, connection, per_page=2)
 
     assert len(repositories) == 1
-    assert db.count_repositories(connection) == 1
+    assert storage.count_repositories(connection) == 1
 
 
 def test_collect_page_resumes_from_saved_cursor():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
-    db.save_collection_state(connection, cursor="cursor-1", total_collected=10)
+    storage.init_db(connection)
+    storage.save_collection_state(connection, cursor="cursor-1", total_collected=10)
     client = FakeClient(
         {
             "repositoryCount": 1,
@@ -112,7 +112,7 @@ def test_collect_page_resumes_from_saved_cursor():
 
     collect_page(client, connection, per_page=1)
 
-    assert db.get_collection_state(connection) == {
+    assert storage.get_collection_state(connection) == {
         "cursor": "cursor-2",
         "total_collected": 11,
     }
@@ -149,20 +149,20 @@ class SequencedFakeClient:
 
 def test_collect_total_accumulates_across_batches():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
+    storage.init_db(connection)
     client = SequencedFakeClient(total_available=1000)
 
     with patch("src.collector.time.sleep"):
         total_collected = collect_total(client, connection, total=100, batch_size=25)
 
     assert total_collected == 100
-    assert db.count_repositories(connection) == 100
+    assert storage.count_repositories(connection) == 100
     assert client.calls == [25, 25, 25, 25]
 
 
 def test_collect_total_clamps_last_batch_to_remaining():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
+    storage.init_db(connection)
     client = SequencedFakeClient(total_available=1000)
 
     with patch("src.collector.time.sleep"):
@@ -173,20 +173,20 @@ def test_collect_total_clamps_last_batch_to_remaining():
 
 def test_collect_total_stops_early_when_search_runs_out_of_results():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
+    storage.init_db(connection)
     client = SequencedFakeClient(total_available=10)
 
     with patch("src.collector.time.sleep"):
         total_collected = collect_total(client, connection, total=100, batch_size=25)
 
     assert total_collected == 10
-    assert db.count_repositories(connection) == 10
+    assert storage.count_repositories(connection) == 10
 
 
 def test_collect_total_is_noop_when_already_met():
     connection = sqlite3.connect(":memory:")
-    db.init_db(connection)
-    db.save_collection_state(connection, cursor="cursor-x", total_collected=100)
+    storage.init_db(connection)
+    storage.save_collection_state(connection, cursor="cursor-x", total_collected=100)
     client = SequencedFakeClient(total_available=1000)
 
     total_collected = collect_total(client, connection, total=100, batch_size=25)
