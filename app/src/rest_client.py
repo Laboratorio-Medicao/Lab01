@@ -1,23 +1,20 @@
 import json
-import time
 import urllib.error
 import urllib.request
 
+from src.http_retry import (
+    RetryableTransportError,
+    call_with_retry,
+    is_retryable_http_status,
+    parse_retry_after_header,
+)
+
 DEFAULT_MAX_ATTEMPTS = 3
-DEFAULT_RETRY_BACKOFF_BASE_SECONDS = 2.0
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 30
-RETRYABLE_SERVER_ERROR_CODES = {500, 502, 503, 504}
-RETRYABLE_THROTTLING_CODES = {403, 429}
 
 
 class RestNotFoundError(RuntimeError):
     pass
-
-
-class _RetryableTransportError(RuntimeError):
-    def __init__(self, message, retry_after_seconds=None):
-        super().__init__(message)
-        self.retry_after_seconds = retry_after_seconds
 
 
 class RestClient:
@@ -44,17 +41,10 @@ class RestClient:
         return all_items
 
     def _with_exponential_backoff(self, fn):
-        last_error = None
-        for attempt in range(1, self._max_attempts + 1):
-            try:
-                return fn()
-            except _RetryableTransportError as error:
-                last_error = error
-                if attempt == self._max_attempts:
-                    break
-                delay = error.retry_after_seconds or self._backoff_seconds(attempt)
-                time.sleep(delay)
-        raise RuntimeError(str(last_error)) from last_error
+        try:
+            return call_with_retry(fn, self._max_attempts)
+        except RetryableTransportError as error:
+            raise RuntimeError(str(error)) from error
 
     def _request_once(self, url):
         request = urllib.request.Request(
@@ -78,30 +68,8 @@ class RestClient:
         if error.code == 404:
             raise RestNotFoundError(message) from error
 
-        retry_after = self._parse_retry_after(error.headers)
-        if self._is_retryable(error.code, retry_after):
-            raise _RetryableTransportError(message, retry_after_seconds=retry_after) from error
+        retry_after = parse_retry_after_header(error.headers)
+        if is_retryable_http_status(error.code, retry_after):
+            raise RetryableTransportError(message, retry_after_seconds=retry_after) from error
 
         raise RuntimeError(message) from error
-
-    @staticmethod
-    def _is_retryable(code, retry_after):
-        is_server_error = code in RETRYABLE_SERVER_ERROR_CODES
-        is_throttled = code in RETRYABLE_THROTTLING_CODES and (code == 429 or retry_after is not None)
-        return is_server_error or is_throttled
-
-    @staticmethod
-    def _backoff_seconds(attempt):
-        return DEFAULT_RETRY_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
-
-    @staticmethod
-    def _parse_retry_after(headers):
-        if not headers:
-            return None
-        value = headers.get("Retry-After")
-        if value is None:
-            return None
-        try:
-            return max(float(value), 1.0)
-        except (TypeError, ValueError):
-            return None

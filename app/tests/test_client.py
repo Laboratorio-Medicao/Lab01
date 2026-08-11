@@ -63,6 +63,43 @@ def test_execute_raises_on_graphql_errors(monkeypatch):
         client.execute("query { }")
 
 
+def test_execute_retries_on_graphql_rate_limited_error_then_succeeds(monkeypatch):
+    success_payload = {"data": {"rateLimit": rate_limit_payload(), "search": {}}}
+    rate_limited_payload = {"errors": [{"type": "RATE_LIMITED", "message": "boom"}]}
+    attempts = {"count": 0}
+
+    def fake_urlopen(request, timeout):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            return FakeResponse(rate_limited_payload)
+        return FakeResponse(success_payload)
+
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
+
+    client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
+    data = client.execute("query { }")
+
+    assert attempts["count"] == 2
+    assert data["search"] == {}
+
+
+def test_execute_gives_up_after_max_attempts_on_graphql_rate_limited_error(monkeypatch):
+    payload = {"errors": [{"type": "RATE_LIMITED", "message": "boom"}]}
+    monkeypatch.setattr(
+        "src.client.urllib.request.urlopen",
+        lambda request, timeout: FakeResponse(payload),
+    )
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
+
+    client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
+
+    with pytest.raises(GraphQLRequestError) as excinfo:
+        client.execute("query { }")
+
+    assert excinfo.value.retryable is True
+
+
 def test_execute_raises_on_missing_data_field(monkeypatch):
     monkeypatch.setattr(
         "src.client.urllib.request.urlopen",
@@ -122,7 +159,7 @@ def test_execute_retries_on_server_error_then_succeeds(monkeypatch):
         return FakeResponse(payload)
 
     monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
     data = client.execute("query { }")
@@ -143,7 +180,7 @@ def test_execute_retries_using_retry_after_header(monkeypatch):
 
     monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
     sleep_calls = []
-    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
     client.execute("query { }")
@@ -188,7 +225,7 @@ def test_execute_gives_up_after_max_attempts(monkeypatch):
         raise http_error(503)
 
     monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
 
