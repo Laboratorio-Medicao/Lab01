@@ -11,7 +11,7 @@ from src.storage import (
     save_collection_state,
     upsert_repositories,
 )
-from src.client import GitHubGraphQLClient
+from src.client import GitHubGraphQLClient, GraphQLRequestError
 from src.query import (
     MAX_GITHUB_SEARCH_PAGE_SIZE,
     REPOSITORY_SEARCH_QUERY,
@@ -20,14 +20,8 @@ from src.query import (
 
 logger = logging.getLogger(__name__)
 
-# A API GraphQL do GitHub responde 502 (Bad Gateway) de forma consistente para
-# esta query com perPage >= 40 — o custo de calcular totalCount de
-# pullRequests/releases/issues para muitos repositórios na mesma resposta
-# parece estourar o timeout do lado deles. Validado empiricamente em
-# 2026-08-08 (200 OK até perPage=35, 502 a partir de perPage=40). Não é um
-# limite documentado pela API, só o que se mostrou estável na prática — ver
-# README.md ("Rate limit e tamanho de página") para o detalhe completo.
 DEFAULT_BATCH_SIZE = 25
+MIN_BATCH_SIZE = 5
 BATCH_DELAY_SECONDS = 1.0
 
 
@@ -90,13 +84,28 @@ def collect_page(client, connection, per_page):
 
 
 def collect_total(client, connection, total, batch_size):
+    current_batch_size = batch_size
     while True:
         total_collected = get_collection_state(connection)["total_collected"]
         if total_collected >= total:
             break
 
-        page_size = min(batch_size, total - total_collected)
-        repositories = collect_page(client, connection, page_size)
+        page_size = min(current_batch_size, total - total_collected)
+        try:
+            repositories = collect_page(client, connection, page_size)
+        except GraphQLRequestError as error:
+            if not error.retryable or current_batch_size <= MIN_BATCH_SIZE:
+                raise
+            current_batch_size = max(current_batch_size // 2, MIN_BATCH_SIZE)
+            logger.warning(
+                "página com perPage=%s falhou de forma retomável (%s); "
+                "reduzindo tamanho de lote para %s e tentando novamente",
+                page_size,
+                error,
+                current_batch_size,
+            )
+            continue
+
         if not repositories:
             logger.warning(
                 "página vazia retornada antes de atingir a meta (total_collected=%s, meta=%s); "

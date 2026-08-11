@@ -1,21 +1,3 @@
-"""Valida RQ05 (linguagem primária) e RQ06 (issues fechadas) contra a API REST
-do GitHub, para uma amostra dos repositórios já coletados no Postgres (Supabase).
-
-RQ07 usa os mesmos campos de linguagem (RQ05) cruzados com as métricas de
-RQ02/03/04 — não há campos adicionais a validar nesta sprint.
-
-Uso:
-    python -m src.validate_rq05_rq06_rq07 [--sample-size N]
-
-Gera uma tabela Markdown em stdout e em docs/validacao-rq05-rq06.md, pronta
-para ser colada como evidência na issue #6.
-
-Edge cases cobertos:
-- primaryLanguage nulo (null no GraphQL → None no banco → null na REST)
-- repositório com zero issues (open + closed = 0): razão indefinida, sinalizado
-  na tabela sem divisão por zero
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -56,11 +38,6 @@ class InsufficientSampleError(RuntimeError):
 
 
 def fetch_candidate_pool(connection, pool_size):
-    # Divide o pool em dois grupos:
-    # 1) repos COM issues (open+closed > 0), ordenados ASC para minimizar custo
-    #    da paginação REST de issues fechadas
-    # 2) um repo com zero issues para cobrir o edge case obrigatório da spec
-    # A UNION garante que o edge case apareça mesmo que o pool seja pequeno.
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
@@ -97,7 +74,6 @@ def fetch_candidate_pool(connection, pool_size):
 
 
 def fetch_rest_repo_data(owner, name, client):
-    """Retorna language e open_issues_count da REST API."""
     data = client.get(f"https://api.github.com/repos/{owner}/{name}")
     return {
         "language": data.get("language"),
@@ -106,13 +82,9 @@ def fetch_rest_repo_data(owner, name, client):
 
 
 def fetch_rest_closed_issues_count(owner, name, client):
-    """Conta issues fechadas paginando GET /issues?state=closed."""
     items = client.get_all_pages(
         f"https://api.github.com/repos/{owner}/{name}/issues?state=closed"
     )
-    # A REST API de /issues retorna tanto issues quanto pull requests.
-    # Filtramos apenas issues reais (sem pull_request key) para alinhar com
-    # o GraphQL que usa issues(states: CLOSED) — que também exclui PRs.
     return sum(1 for item in items if "pull_request" not in item)
 
 
@@ -134,15 +106,9 @@ def validate_candidates(candidates, sample_size, client):
 
         zero_issues = (repo["open_issues"] + repo["closed_issues"]) == 0
 
-        # Normaliza string vazia para None: o CSV exporta NULL como '', mas a
-        # REST retorna null como None. São semanticamente equivalentes.
         lang_query = repo["primary_language"] or None
         lang_rest = rest_data["language"] or None
 
-        # REST open_issues_count soma issues abertas + PRs abertos — difere do
-        # GraphQL issues(states: OPEN) que conta só issues. Comparamos apenas
-        # closed_issues, onde não há essa ambiguidade, e documentamos a diferença
-        # encontrada na coluna de open_issues para rastreabilidade.
         results.append(ValidationResult(
             repo=label,
             language_query=lang_query,

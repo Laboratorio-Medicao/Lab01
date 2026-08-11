@@ -1,7 +1,10 @@
 import json
 from unittest.mock import patch
 
+import pytest
+
 from src import storage
+from src.client import GraphQLRequestError
 from src.collector import collect_page, collect_total, parse_repository_node
 from tests.conftest import requires_supabase
 
@@ -119,10 +122,6 @@ def test_collect_page_resumes_from_saved_cursor(db_connection):
 
 
 class SequencedFakeClient:
-    """Simula a paginação real da busca do GitHub: cada página devolve até
-    `perPage` repositórios a partir do cursor (índice), respeitando o total
-    de repositórios "disponíveis" na busca simulada."""
-
     def __init__(self, total_available):
         self._total_available = total_available
         self.calls = []
@@ -193,3 +192,68 @@ def test_collect_total_is_noop_when_already_met(db_connection):
 
     assert total_collected == 100
     assert client.calls == []
+
+
+class ShrinkingFailureFakeClient:
+    def __init__(self, total_available, fails_above_page_size):
+        self._total_available = total_available
+        self._fails_above_page_size = fails_above_page_size
+        self.calls = []
+
+    def execute(self, query, variables):
+        per_page = variables["perPage"]
+        after = variables["after"]
+        self.calls.append(per_page)
+
+        if per_page > self._fails_above_page_size:
+            raise GraphQLRequestError("502 simulado", retryable=True)
+
+        start = int(after) if after else 0
+        end = min(start + per_page, self._total_available)
+        return {
+            "search": {
+                "repositoryCount": self._total_available,
+                "pageInfo": {
+                    "hasNextPage": end < self._total_available,
+                    "endCursor": str(end),
+                },
+                "nodes": [repository_node(f"R_{i}") for i in range(start, end)],
+            }
+        }
+
+
+@requires_supabase
+def test_collect_total_shrinks_batch_size_after_retryable_failure(db_connection):
+    storage.init_db(db_connection)
+    client = ShrinkingFailureFakeClient(total_available=1000, fails_above_page_size=5)
+
+    with patch("src.collector.time.sleep"):
+        total_collected = collect_total(client, db_connection, total=13, batch_size=25)
+
+    assert total_collected == 13
+    assert storage.count_repositories(db_connection) == 13
+    assert client.calls == [13, 12, 6, 5, 5, 3]
+
+
+@requires_supabase
+def test_collect_total_reraises_non_retryable_graphql_error(db_connection):
+    storage.init_db(db_connection)
+
+    class AlwaysFailsClient:
+        def execute(self, query, variables):
+            raise GraphQLRequestError("token inválido", retryable=False)
+
+    with pytest.raises(GraphQLRequestError):
+        collect_total(AlwaysFailsClient(), db_connection, total=10, batch_size=25)
+
+
+@requires_supabase
+def test_collect_total_reraises_retryable_error_once_at_min_batch_size(db_connection):
+    storage.init_db(db_connection)
+    client = ShrinkingFailureFakeClient(total_available=1000, fails_above_page_size=1)
+
+    with pytest.raises(GraphQLRequestError):
+        with patch("src.collector.time.sleep"):
+            collect_total(client, db_connection, total=10, batch_size=25)
+
+    assert client.calls == [10, 10, 6, 5]
