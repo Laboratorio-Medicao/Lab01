@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src import storage
 from src.config import get_github_token
-from src.rest_client import RestClient, RestNotFoundError
+from src.rest_client import RestClient, RestNotFoundError, RestRequestError
 from src.storage import get_connection
 
 DAYS_PER_YEAR = 365.25
@@ -79,7 +79,12 @@ def validate_candidates(candidates, sample_size, client):
                 repo["owner"], repo["name"], client
             )
         except RestNotFoundError:
-            skipped.append(label)
+            skipped.append(f"{label} (404)")
+            continue
+        except RestRequestError as error:
+            if not error.retryable:
+                raise
+            skipped.append(f"{label} (falha transitória)")
             continue
 
         age_years = compute_age_years(repo["created_at"], repo["collected_at"])
@@ -152,8 +157,9 @@ def main():
 
     if skipped:
         print(
-            f"{len(skipped)} repositório(s) pulado(s) por indisponibilidade da "
-            f"listagem REST /pulls (ex.: has_issues=false): {', '.join(skipped)}\n"
+            f"{len(skipped)} repositório(s) pulado(s) ao consultar a API REST "
+            f"(404 ou falha transitória após esgotar as tentativas de retry): "
+            f"{', '.join(skipped)}\n"
         )
 
     ensure_minimum_sample(results)

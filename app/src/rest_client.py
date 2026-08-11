@@ -17,6 +17,12 @@ class RestNotFoundError(RuntimeError):
     pass
 
 
+class RestRequestError(RuntimeError):
+    def __init__(self, message, retryable=False):
+        super().__init__(message)
+        self.retryable = retryable
+
+
 class RestClient:
     def __init__(self, token, max_attempts=DEFAULT_MAX_ATTEMPTS):
         self._token = token
@@ -44,7 +50,7 @@ class RestClient:
         try:
             return call_with_retry(fn, self._max_attempts)
         except RetryableTransportError as error:
-            raise RuntimeError(str(error)) from error
+            raise RestRequestError(str(error), retryable=True) from error
 
     def _request_once(self, url):
         request = urllib.request.Request(
@@ -72,4 +78,4 @@ class RestClient:
         if is_retryable_http_status(error.code, retry_after):
             raise RetryableTransportError(message, retry_after_seconds=retry_after) from error
 
-        raise RuntimeError(message) from error
+        raise RestRequestError(message, retryable=False) from error
