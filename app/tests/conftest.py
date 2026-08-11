@@ -10,10 +10,6 @@ requires_supabase = pytest.mark.skipif(
 
 @pytest.fixture
 def db_connection(monkeypatch):
-    """Conexão real com o Postgres do Supabase, apontando para tabelas
-    isoladas (test_repositories/test_collection_state) em vez das tabelas de
-    produção compartilhadas pelo time — ver REPOSITORIES_TABLE/
-    COLLECTION_STATE_TABLE em src/storage.py."""
     monkeypatch.setattr(storage, "REPOSITORIES_TABLE", "test_repositories")
     monkeypatch.setattr(storage, "COLLECTION_STATE_TABLE", "test_collection_state")
 

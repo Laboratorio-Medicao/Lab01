@@ -2,7 +2,7 @@
 
 Laboratório 01 da disciplina **Laboratório de Experimentação de Software** — Engenharia de Software, 6º período.
 
-O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo seis questões de pesquisa sobre maturidade, contribuição, frequência de releases, atualização, linguagem e qualidade de issues.
+O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo seis questões de pesquisa sobre maturidade, contribuição, frequência de releases, atualização, linguagem e qualidade de issues — mais duas questões bônus (RQ07, do enunciado, e RQ08, extra do grupo).
 
 ---
 
@@ -17,6 +17,9 @@ O objetivo é coletar e analisar dados dos **1.000 repositórios com maior núme
 | RQ05 | Sistemas populares são escritos nas linguagens mais populares? | Linguagem primária de cada repositório |
 | RQ06 | Sistemas populares possuem alto percentual de issues fechadas? | Razão entre issues fechadas e total de issues |
 | RQ07 ⭐ | Sistemas em linguagens populares recebem mais contribuição, releases e atualizações? | RQ02, RQ03 e RQ04 segmentados por linguagem |
+| RQ08 ⭐ (extra) | Repositórios populares muito jovens acumulam estrelas de forma desproporcional à sua atividade real de manutenção? | `stargazer_count / idade` vs. score de engajamento (PRs merged + releases + issues fechadas, normalizado por idade), comparados por tercil de idade |
+
+RQ08 é um bônus adicional do grupo (não pedido no enunciado), motivado por um achado da própria coleta: ver `docs/metodologia.md`, seção "Risco de dados: repositórios jovens com alto número de estrelas".
 
 A referência adotada para "linguagens mais populares" é o **GitHub Octoverse** (fonte: octoverse.github.com), mantida ao longo de todo o laboratório.
 
@@ -55,7 +58,9 @@ GitHub GraphQL API
 
 **Rate limit:** a API GraphQL do GitHub limita a 5.000 pontos/hora. Cada resposta retorna `rateLimit.remaining` e `rateLimit.resetAt`. O client monitora esse campo e dorme até o reset quando o saldo está abaixo de um threshold definido — sem perda de dados e sem requisições desnecessárias. Também é comum receber um HTTP 403 de rate limit secundário (abuso por rajada de requisições) com header `Retry-After`; o client trata isso como erro retentável e espera o tempo indicado antes de tentar de novo.
 
-**Rate limit e tamanho de página (por que o batch é 25, não 100):** testamos a `REPOSITORY_SEARCH_QUERY` diretamente contra a API em 2026-08-08 variando `perPage`. A partir de `perPage=40` o GitHub passou a responder **HTTP 502 (Bad Gateway)** de forma consistente; até `perPage=35` a resposta veio OK. A hipótese mais provável é o custo de computar `totalCount` de `pullRequests`, `releases` e `issues` (open/closed) para muitos repositórios na mesma resposta, o que aparentemente estoura algum timeout do lado do GitHub — não é um limite documentado oficialmente pela API, é um comportamento observado empiricamente, que pode variar com carga do servidor. Por segurança, o coletor usa **25 como tamanho de lote padrão** (`DEFAULT_BATCH_SIZE` em `collector.py`), com folga do limiar de 35-40 observado. Essa é uma decisão de metodologia que vale citar no relatório final: a coleta dos 100 (S01) e dos 1.000 (S02) repositórios não é feita em uma única requisição GraphQL, e sim em múltiplos lotes menores, com o estado (cursor + total já coletado) persistido no Postgres entre lotes — o que também é o mecanismo que permite retomar uma coleta interrompida sem reprocessar repositórios já salvos.
+**Rate limit e tamanho de página (por que o batch é 25, não 100):** testamos a `REPOSITORY_SEARCH_QUERY` diretamente contra a API em 2026-08-08 variando `perPage`. A partir de `perPage=40` o GitHub passou a responder **HTTP 502 (Bad Gateway)** de forma consistente; até `perPage=35` a resposta veio OK naquele teste. A hipótese mais provável é o custo de computar `totalCount` de `pullRequests`, `releases` e `issues` (open/closed) para muitos repositórios na mesma resposta, o que aparentemente estoura algum timeout do lado do GitHub — não é um limite documentado oficialmente pela API. Por segurança, o coletor usa **25 como tamanho de lote padrão** (`DEFAULT_BATCH_SIZE` em `collector.py`), com folga do limiar de 35-40 observado. Essa é uma decisão de metodologia que vale citar no relatório final: a coleta dos 100 (S01) e dos 1.000 (S02) repositórios não é feita em uma única requisição GraphQL, e sim em múltiplos lotes menores, com o estado (cursor + total já coletado) persistido no Postgres entre lotes — o que também é o mecanismo que permite retomar uma coleta interrompida sem reprocessar repositórios já salvos.
+
+**Atualização (2026-08-11):** o limiar de `perPage=35-40` não é um teto confiável — em execução real contra a API, um lote de `perPage=25` retornou 502 de forma consistente (3 tentativas, mesmo após o retry/backoff do client) para uma página específica, provavelmente por causa de repositórios com contagens muito altas de PRs/issues caindo naquele lote. O custo parece depender de *quais* repositórios estão na página, não só do tamanho dela. Por isso `collect_total` (em `collector.py`) agora reduz `perPage` automaticamente pela metade (até um piso de `MIN_BATCH_SIZE=5`) sempre que uma página falha de forma retentável mesmo após o client esgotar as tentativas, e repete essa mesma página com o lote menor — sem perder o progresso já salvo (o cursor só avança em páginas bem-sucedidas). Na prática isso já resolveu o caso observado: a coleta completou os 100 repositórios sem intervenção manual.
 
 ---
 
@@ -108,6 +113,15 @@ python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginaç
 # Validação cruzada RQ01/RQ02 contra a API REST do GitHub (Issue #4)
 # gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
 python -m src.validate_rq01_rq02 --sample-size 8
+
+# Validação cruzada RQ05/RQ06 contra a API REST do GitHub (Issue #6)
+# gera docs/validacao-rq05-rq06.md
+python -m src.validate_rq05_rq06_rq07 --sample-size 8
+
+# Validação cruzada RQ08 (releases_count) contra a API REST do GitHub
+# gera docs/validacao-rq08.md — os demais campos usados em RQ08 (idade, PRs
+# merged, issues fechadas) já são validados pelos dois scripts acima
+python -m src.validate_rq08 --sample-size 8
 
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export
