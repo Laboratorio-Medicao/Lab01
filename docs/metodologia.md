@@ -122,6 +122,50 @@ não um problema na coleta. Vale considerar, em S03, uma análise de
 sensibilidade (mediana com e sem outliers de idade) para não deixar esse
 efeito mascarado nos números agregados.
 
+## RQ08 (bônus extra do grupo) — Velocidade de estrelas vs. engajamento real
+
+**Pergunta:** repositórios populares muito jovens acumulam estrelas de forma
+desproporcional à sua atividade real de manutenção, em comparação com
+repositórios populares maduros?
+
+**Motivação:** não é uma pergunta de template — nasce diretamente do achado
+já documentado acima em "Risco de dados: repositórios jovens com alto número
+de estrelas" (16% da amostra de S01 com <1,5 anos de idade e >100 mil
+estrelas, padrão consistente com *star-farming* em 2025-2026). RQ01 apenas
+registra a idade; RQ08 testa formalmente se esse descolamento entre estrelas
+e atividade é sistemático ou isolado a poucos casos, usando só os campos já
+coletados (sem nova consulta GraphQL nem re-coleta).
+
+**Métricas:**
+
+```
+razão_estrelas    = stargazer_count / idade_em_anos
+score_engajamento = (merged_pull_requests + releases_count + closed_issues) / idade_em_anos
+```
+
+- `idade_em_anos`: mesma fórmula da RQ01 (`(collected_at - created_at) / 365.25`).
+- Ambas as métricas são normalizadas por idade para que um repositório maduro
+  com números absolutos altos (que teve mais tempo para acumular estrelas
+  *e* atividade) não seja comparado diretamente com um repositório jovem em
+  termos absolutos — o que importa é a *taxa*, não o total.
+
+**Método de comparação:** os 1.000 repositórios são divididos em tercis de
+idade (jovem/médio/maduro). Dentro de cada tercil, compara-se a distribuição
+de `razão_estrelas` com a de `score_engajamento`. A hipótese informal é que,
+no tercil mais jovem, `razão_estrelas` é desproporcionalmente alta em relação
+a `score_engajamento` (muitas estrelas, pouca atividade de manutenção
+correspondente) — um padrão que não deve se repetir com a mesma intensidade
+nos tercis médio e maduro, onde estrelas tendem a acompanhar anos de PRs,
+releases e resolução de issues.
+
+**Limitação assumida:** assim como em RQ01, não há um critério objetivo e
+gratuito para provar que uma estrela é "comprada" — RQ08 mede *correlação*
+entre velocidade de popularidade e velocidade de atividade, não intenção. Um
+repositório jovem com `razão_estrelas` alta e `score_engajamento` baixo é
+reportado como *sinal* de descolamento, não como acusação de fraude; casos
+como `anthropics/*` (organização já estabelecida, tração de mercado
+legítima) são o contraponto esperado dentro do próprio tercil jovem.
+
 ## RQ02 — Pull requests aceitas
 
 **Campo fonte:** `mergedPullRequests: pullRequests(states: MERGED) { totalCount }`.

@@ -192,10 +192,40 @@ def test_execute_gives_up_after_max_attempts(monkeypatch):
 
     client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
 
-    with pytest.raises(GraphQLRequestError):
+    with pytest.raises(GraphQLRequestError) as excinfo:
         client.execute("query { }")
 
     assert attempts["count"] == 3
+    assert excinfo.value.retryable is True
+
+
+def test_execute_raises_non_retryable_error_on_graphql_errors(monkeypatch):
+    payload = {"errors": [{"message": "boom"}]}
+    monkeypatch.setattr(
+        "src.client.urllib.request.urlopen",
+        lambda request, timeout: FakeResponse(payload),
+    )
+
+    client = GitHubGraphQLClient(token="fake-token")
+
+    with pytest.raises(GraphQLRequestError) as excinfo:
+        client.execute("query { }")
+
+    assert excinfo.value.retryable is False
+
+
+def test_execute_raises_non_retryable_error_on_permission_denied_403(monkeypatch):
+    def fake_urlopen(request, timeout):
+        raise http_error(403)
+
+    monkeypatch.setattr("src.client.urllib.request.urlopen", fake_urlopen)
+
+    client = GitHubGraphQLClient(token="fake-token", max_attempts=3)
+
+    with pytest.raises(GraphQLRequestError) as excinfo:
+        client.execute("query { }")
+
+    assert excinfo.value.retryable is False
 
 
 def test_constructor_requires_token():
