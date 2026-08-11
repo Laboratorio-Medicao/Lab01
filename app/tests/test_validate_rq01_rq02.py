@@ -4,6 +4,7 @@ from src import storage
 from src.validate_rq01_rq02 import (
     InsufficientSampleError,
     RestNotFoundError,
+    RestRequestError,
     compute_age_years,
     ensure_minimum_sample,
     fetch_candidate_pool,
@@ -127,10 +128,66 @@ def test_validate_candidates_skips_404_and_continues(monkeypatch):
 
     results, skipped = validate_candidates(candidates, sample_size=5, client="fake-client")
 
-    assert skipped == ["broken/repo"]
+    assert skipped == ["broken/repo (404)"]
     assert len(results) == 1
     assert results[0]["repo"] == "octocat/example"
     assert results[0]["matches"] is True
+
+
+def test_validate_candidates_skips_retryable_rest_error_and_continues(monkeypatch):
+    candidates = [
+        {
+            "owner": "flaky",
+            "name": "repo",
+            "created_at": "2020-01-01T00:00:00Z",
+            "merged_pull_requests": 5,
+            "collected_at": "2024-01-01 00:00:00",
+        },
+        {
+            "owner": "octocat",
+            "name": "example",
+            "created_at": "2020-01-01T00:00:00Z",
+            "merged_pull_requests": 5,
+            "collected_at": "2024-01-01 00:00:00",
+        },
+    ]
+
+    def fake_created_at(owner, name, client):
+        if owner == "flaky":
+            raise RestRequestError("503 esgotou tentativas", retryable=True)
+        return "2020-01-01T00:00:00Z"
+
+    monkeypatch.setattr("src.validate_rq01_rq02.fetch_rest_created_at", fake_created_at)
+    monkeypatch.setattr(
+        "src.validate_rq01_rq02.fetch_merged_pr_count_via_rest_pagination",
+        lambda owner, name, client: 5,
+    )
+
+    results, skipped = validate_candidates(candidates, sample_size=5, client="fake-client")
+
+    assert skipped == ["flaky/repo (falha transitória)"]
+    assert len(results) == 1
+    assert results[0]["repo"] == "octocat/example"
+
+
+def test_validate_candidates_reraises_non_retryable_rest_error(monkeypatch):
+    candidates = [
+        {
+            "owner": "broken",
+            "name": "repo",
+            "created_at": "2020-01-01T00:00:00Z",
+            "merged_pull_requests": 5,
+            "collected_at": "2024-01-01 00:00:00",
+        }
+    ]
+
+    def fake_created_at(owner, name, client):
+        raise RestRequestError("401 token inválido", retryable=False)
+
+    monkeypatch.setattr("src.validate_rq01_rq02.fetch_rest_created_at", fake_created_at)
+
+    with pytest.raises(RestRequestError):
+        validate_candidates(candidates, sample_size=5, client="fake-client")
 
 
 def test_validate_candidates_stops_once_sample_size_reached(monkeypatch):
