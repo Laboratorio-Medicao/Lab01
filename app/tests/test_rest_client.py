@@ -58,7 +58,7 @@ def test_get_retries_on_server_error_then_succeeds(monkeypatch):
         return FakeResponse({"ok": True})
 
     monkeypatch.setattr("src.rest_client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.rest_client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
 
     client = RestClient("fake-token")
     result = client.get("https://api.github.com/repos/owner/repo")
@@ -79,7 +79,7 @@ def test_get_respects_retry_after_header(monkeypatch):
     monkeypatch.setattr("src.rest_client.urllib.request.urlopen", fake_urlopen)
     sleep_calls = []
     monkeypatch.setattr(
-        "src.rest_client.time.sleep", lambda seconds: sleep_calls.append(seconds)
+        "src.http_retry.time.sleep", lambda seconds: sleep_calls.append(seconds)
     )
 
     client = RestClient("fake-token")
@@ -96,7 +96,7 @@ def test_get_gives_up_after_max_attempts(monkeypatch):
         raise http_error(503)
 
     monkeypatch.setattr("src.rest_client.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.rest_client.time.sleep", lambda seconds: None)
+    monkeypatch.setattr("src.http_retry.time.sleep", lambda seconds: None)
 
     client = RestClient("fake-token", max_attempts=3)
 
