@@ -1,5 +1,4 @@
 import io
-import sqlite3
 import urllib.error
 
 import pytest
@@ -16,6 +15,7 @@ from src.validate_rq01_rq02 import (
     validate_candidates,
     _rest_get,
 )
+from tests.conftest import requires_supabase
 
 
 class FakeResponse:
@@ -79,11 +79,11 @@ def repository_row(repository_id, merged_pull_requests):
     }
 
 
-def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending():
-    connection = sqlite3.connect(":memory:")
-    storage.init_db(connection)
+@requires_supabase
+def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending(db_connection):
+    storage.init_db(db_connection)
     storage.upsert_repositories(
-        connection,
+        db_connection,
         [
             repository_row("R_1", merged_pull_requests=50),
             repository_row("R_2", merged_pull_requests=5),
@@ -91,7 +91,7 @@ def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending():
         ],
     )
 
-    pool = fetch_candidate_pool(connection, pool_size=2)
+    pool = fetch_candidate_pool(db_connection, pool_size=2)
 
     assert [repo["merged_pull_requests"] for repo in pool] == [5, 20]
 

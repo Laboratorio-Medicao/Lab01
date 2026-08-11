@@ -1,2 +1,5 @@
-# Nenhuma dependência de terceiros: coleta usa apenas a biblioteca padrão do
-# Python (urllib, sqlite3, json, argparse). Ver README.md para justificativa.
+# Coleta usa apenas a biblioteca padrão do Python para consultar a API do
+# GitHub (urllib, json, argparse — ver README.md para justificativa). O único
+# pacote de terceiros é o driver de banco, para conectar no Postgres (Supabase)
+# compartilhado pelo time.
+psycopg2-binary

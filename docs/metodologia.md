@@ -15,9 +15,10 @@ idade_em_anos = (collected_at - created_at) / 365.25 dias
 ```
 
 - **Referência de "hoje":** não é o momento em que a análise roda, e sim
-  `collected_at`, o timestamp UTC (`datetime('now')` do SQLite) salvo em cada
-  linha da tabela `repositories` no momento em que aquele repositório foi
-  coletado. Isso garante que o cálculo de idade seja reproduzível mesmo que a
+  `collected_at`, o timestamp UTC (`now() AT TIME ZONE 'utc'` do Postgres)
+  salvo em cada linha da tabela `repositories` no momento em que aquele
+  repositório foi coletado. Isso garante que o cálculo de idade seja
+  reproduzível mesmo que a
   coleta de S01 (100 repos) e a de S02 (1.000 repos) ocorram em dias
   diferentes — cada linha carrega sua própria referência temporal, em vez de
   depender da data em que um script de análise é executado depois.

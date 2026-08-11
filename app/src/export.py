@@ -1,4 +1,4 @@
-"""Exporta os repositórios coletados em data/repos.db para data/repos.csv
+"""Exporta os repositórios coletados no Postgres (Supabase) para data/repos.csv
 (entregável exigido — ver README.md).
 
 Uso:
