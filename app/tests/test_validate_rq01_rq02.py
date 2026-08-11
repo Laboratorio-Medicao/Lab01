@@ -1,6 +1,3 @@
-import io
-import urllib.error
-
 import pytest
 
 from src import storage
@@ -13,35 +10,32 @@ from src.validate_rq01_rq02 import (
     fetch_merged_pr_count_via_rest_pagination,
     render_markdown_table,
     validate_candidates,
-    _rest_get,
 )
 from tests.conftest import requires_supabase
 
 
-class FakeResponse:
-    def __init__(self, payload):
-        import json
+class FakeRestClient:
+    """Dublê de RestClient (src/rest_client.py) para testes desta camada.
 
-        self._body = json.dumps(payload).encode("utf-8")
+    validate_rq01_rq02 depende apenas de .get()/.get_all_pages() — a lógica
+    de retry/backoff em si é responsabilidade do RestClient e é testada
+    isoladamente em tests/test_rest_client.py.
+    """
 
-    def read(self):
-        return self._body
+    def __init__(self, get_result=None, get_all_pages_result=None, not_found=False):
+        self._get_result = get_result
+        self._get_all_pages_result = get_all_pages_result if get_all_pages_result is not None else []
+        self._not_found = not_found
 
-    def __enter__(self):
-        return self
+    def get(self, url):
+        if self._not_found:
+            raise RestNotFoundError(f"404 em {url}")
+        return self._get_result
 
-    def __exit__(self, *exc_info):
-        return False
-
-
-def http_error(code, headers=None, body=b'{"message": "error"}'):
-    return urllib.error.HTTPError(
-        url="https://api.github.com/repos/owner/repo",
-        code=code,
-        msg="error",
-        hdrs=headers if headers is not None else {},
-        fp=io.BytesIO(body),
-    )
+    def get_all_pages(self, url):
+        if self._not_found:
+            raise RestNotFoundError(f"404 em {url}")
+        return self._get_all_pages_result
 
 
 def pull_request(merged=True):
@@ -96,101 +90,24 @@ def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending(db_connec
     assert [repo["merged_pull_requests"] for repo in pool] == [5, 20]
 
 
-# --- _rest_get retry/backoff --------------------------------------------
-
-
-def test_rest_get_raises_not_found_without_retrying(monkeypatch):
-    attempts = {"count": 0}
-
-    def fake_urlopen(request, timeout):
-        attempts["count"] += 1
-        raise http_error(404)
-
-    monkeypatch.setattr("src.validate_rq01_rq02.urllib.request.urlopen", fake_urlopen)
-
-    with pytest.raises(RestNotFoundError):
-        _rest_get("https://api.github.com/repos/owner/repo", "token")
-
-    assert attempts["count"] == 1
-
-
-def test_rest_get_retries_on_server_error_then_succeeds(monkeypatch):
-    attempts = {"count": 0}
-
-    def fake_urlopen(request, timeout):
-        attempts["count"] += 1
-        if attempts["count"] == 1:
-            raise http_error(503)
-        return FakeResponse({"ok": True})
-
-    monkeypatch.setattr("src.validate_rq01_rq02.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.validate_rq01_rq02.time.sleep", lambda seconds: None)
-
-    result = _rest_get("https://api.github.com/repos/owner/repo", "token")
-
-    assert result == {"ok": True}
-    assert attempts["count"] == 2
-
-
-def test_rest_get_respects_retry_after_header(monkeypatch):
-    attempts = {"count": 0}
-
-    def fake_urlopen(request, timeout):
-        attempts["count"] += 1
-        if attempts["count"] == 1:
-            raise http_error(403, headers={"Retry-After": "7"})
-        return FakeResponse({"ok": True})
-
-    monkeypatch.setattr("src.validate_rq01_rq02.urllib.request.urlopen", fake_urlopen)
-    sleep_calls = []
-    monkeypatch.setattr(
-        "src.validate_rq01_rq02.time.sleep", lambda seconds: sleep_calls.append(seconds)
-    )
-
-    _rest_get("https://api.github.com/repos/owner/repo", "token")
-
-    assert sleep_calls == [7.0]
-
-
-def test_rest_get_gives_up_after_max_attempts(monkeypatch):
-    attempts = {"count": 0}
-
-    def fake_urlopen(request, timeout):
-        attempts["count"] += 1
-        raise http_error(503)
-
-    monkeypatch.setattr("src.validate_rq01_rq02.urllib.request.urlopen", fake_urlopen)
-    monkeypatch.setattr("src.validate_rq01_rq02.time.sleep", lambda seconds: None)
-
-    with pytest.raises(RuntimeError):
-        _rest_get("https://api.github.com/repos/owner/repo", "token", max_attempts=3)
-
-    assert attempts["count"] == 3
-
-
 # --- fetch_merged_pr_count_via_rest_pagination ---------------------------
 
 
-def test_fetch_merged_pr_count_paginates_and_counts_only_merged(monkeypatch):
-    pages = [
-        [pull_request(merged=True) for _ in range(100)],
-        [pull_request(merged=True) for _ in range(3)] + [pull_request(merged=False)],
-    ]
+def test_fetch_merged_pr_count_counts_only_merged():
+    client = FakeRestClient(
+        get_all_pages_result=[pull_request(merged=True) for _ in range(103)]
+        + [pull_request(merged=False)]
+    )
 
-    def fake_rest_get(url, token):
-        return pages.pop(0)
-
-    monkeypatch.setattr("src.validate_rq01_rq02._rest_get", fake_rest_get)
-
-    count = fetch_merged_pr_count_via_rest_pagination("owner", "repo", "token")
+    count = fetch_merged_pr_count_via_rest_pagination("owner", "repo", client)
 
     assert count == 103
 
 
-def test_fetch_merged_pr_count_stops_on_empty_page(monkeypatch):
-    monkeypatch.setattr("src.validate_rq01_rq02._rest_get", lambda url, token: [])
+def test_fetch_merged_pr_count_handles_no_pull_requests():
+    client = FakeRestClient(get_all_pages_result=[])
 
-    count = fetch_merged_pr_count_via_rest_pagination("owner", "repo", "token")
+    count = fetch_merged_pr_count_via_rest_pagination("owner", "repo", client)
 
     assert count == 0
 
@@ -216,7 +133,7 @@ def test_validate_candidates_skips_404_and_continues(monkeypatch):
         },
     ]
 
-    def fake_created_at(owner, name, token):
+    def fake_created_at(owner, name, client):
         if owner == "broken":
             raise RestNotFoundError("404")
         return "2020-01-01T00:00:00Z"
@@ -224,10 +141,10 @@ def test_validate_candidates_skips_404_and_continues(monkeypatch):
     monkeypatch.setattr("src.validate_rq01_rq02.fetch_rest_created_at", fake_created_at)
     monkeypatch.setattr(
         "src.validate_rq01_rq02.fetch_merged_pr_count_via_rest_pagination",
-        lambda owner, name, token: 5,
+        lambda owner, name, client: 5,
     )
 
-    results, skipped = validate_candidates(candidates, sample_size=5, token="token")
+    results, skipped = validate_candidates(candidates, sample_size=5, client="fake-client")
 
     assert skipped == ["broken/repo"]
     assert len(results) == 1
@@ -248,17 +165,17 @@ def test_validate_candidates_stops_once_sample_size_reached(monkeypatch):
     ]
     calls = {"count": 0}
 
-    def fake_created_at(owner, name, token):
+    def fake_created_at(owner, name, client):
         calls["count"] += 1
         return "2020-01-01T00:00:00Z"
 
     monkeypatch.setattr("src.validate_rq01_rq02.fetch_rest_created_at", fake_created_at)
     monkeypatch.setattr(
         "src.validate_rq01_rq02.fetch_merged_pr_count_via_rest_pagination",
-        lambda owner, name, token: 5,
+        lambda owner, name, client: 5,
     )
 
-    results, skipped = validate_candidates(candidates, sample_size=3, token="token")
+    results, skipped = validate_candidates(candidates, sample_size=3, client="fake-client")
 
     assert len(results) == 3
     assert calls["count"] == 3
@@ -277,14 +194,14 @@ def test_validate_candidates_flags_mismatch(monkeypatch):
 
     monkeypatch.setattr(
         "src.validate_rq01_rq02.fetch_rest_created_at",
-        lambda owner, name, token: "1999-01-01T00:00:00Z",
+        lambda owner, name, client: "1999-01-01T00:00:00Z",
     )
     monkeypatch.setattr(
         "src.validate_rq01_rq02.fetch_merged_pr_count_via_rest_pagination",
-        lambda owner, name, token: 999,
+        lambda owner, name, client: 999,
     )
 
-    results, skipped = validate_candidates(candidates, sample_size=5, token="token")
+    results, skipped = validate_candidates(candidates, sample_size=5, client="fake-client")
 
     assert results[0]["matches"] is False
 

@@ -1,5 +1,5 @@
 """Valida RQ05 (linguagem primária) e RQ06 (issues fechadas) contra a API REST
-do GitHub, para uma amostra dos repositórios já coletados em data/repos.db.
+do GitHub, para uma amostra dos repositórios já coletados no Postgres (Supabase).
 
 RQ07 usa os mesmos campos de linguagem (RQ05) cruzados com as métricas de
 RQ02/03/04 — não há campos adicionais a validar nesta sprint.
@@ -22,6 +22,7 @@ import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
+from src import storage
 from src.config import get_github_token
 from src.rest_client import RestClient, RestNotFoundError
 from src.storage import get_connection
@@ -60,27 +61,29 @@ def fetch_candidate_pool(connection, pool_size):
     #    da paginação REST de issues fechadas
     # 2) um repo com zero issues para cobrir o edge case obrigatório da spec
     # A UNION garante que o edge case apareça mesmo que o pool seja pequeno.
-    rows = connection.execute(
-        """
-        SELECT owner, name, primary_language, open_issues, closed_issues FROM (
-            SELECT owner, name, primary_language, open_issues, closed_issues
-            FROM repositories
-            WHERE (open_issues + closed_issues) = 0
-            LIMIT 1
-        )
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT owner, name, primary_language, open_issues, closed_issues FROM (
+                SELECT owner, name, primary_language, open_issues, closed_issues
+                FROM {storage.REPOSITORIES_TABLE}
+                WHERE (open_issues + closed_issues) = 0
+                LIMIT 1
+            ) AS zero_issues_repo
 
-        UNION ALL
+            UNION ALL
 
-        SELECT owner, name, primary_language, open_issues, closed_issues FROM (
-            SELECT owner, name, primary_language, open_issues, closed_issues
-            FROM repositories
-            WHERE (open_issues + closed_issues) > 0
-            ORDER BY (open_issues + closed_issues) ASC
-            LIMIT ?
+            SELECT owner, name, primary_language, open_issues, closed_issues FROM (
+                SELECT owner, name, primary_language, open_issues, closed_issues
+                FROM {storage.REPOSITORIES_TABLE}
+                WHERE (open_issues + closed_issues) > 0
+                ORDER BY (open_issues + closed_issues) ASC
+                LIMIT %s
+            ) AS non_zero_issues_pool
+            """,
+            (pool_size - 1,),
         )
-        """,
-        (pool_size - 1,),
-    ).fetchall()
+        rows = cursor.fetchall()
     return [
         {
             "owner": owner,
@@ -213,7 +216,7 @@ def main():
         )
         if not candidates:
             raise RuntimeError(
-                "nenhum repositório encontrado em data/repos.db — rode o coletor antes"
+                "nenhum repositório encontrado no banco — rode o coletor antes"
             )
         results, skipped = validate_candidates(candidates, args.sample_size, client)
     finally:
