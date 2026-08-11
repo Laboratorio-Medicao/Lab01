@@ -1,41 +1,30 @@
 import argparse
-from datetime import datetime, timezone
 from pathlib import Path
 
 from src import storage
 from src.config import get_github_token
 from src.rest_client import RestClient, RestNotFoundError
 from src.storage import get_connection
+from src.validate_rq01_rq02 import compute_age_years
 
-DAYS_PER_YEAR = 365.25
 DEFAULT_SAMPLE_SIZE = 8
 CANDIDATE_POOL_MULTIPLIER = 3
 MIN_SAMPLE_SIZE = 5
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validacao-rq01-rq02.md"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validacao-rq08.md"
 
 
 class InsufficientSampleError(RuntimeError):
     pass
 
 
-def _parse_iso8601(value):
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-def compute_age_years(created_at, collected_at):
-    created = _parse_iso8601(created_at)
-    collected = datetime.strptime(collected_at, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    age_days = (collected - created).total_seconds() / 86400
-    return round(age_days / DAYS_PER_YEAR, 1)
-
-
 def fetch_candidate_pool(connection, pool_size):
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
-            SELECT owner, name, created_at, merged_pull_requests, collected_at
+            SELECT owner, name, stargazer_count, created_at, collected_at,
+                   merged_pull_requests, releases_count, closed_issues
             FROM {storage.REPOSITORIES_TABLE}
-            ORDER BY merged_pull_requests ASC
+            ORDER BY releases_count ASC
             LIMIT %s
             """,
             (pool_size,),
@@ -45,24 +34,39 @@ def fetch_candidate_pool(connection, pool_size):
         {
             "owner": owner,
             "name": name,
+            "stargazer_count": stargazer_count,
             "created_at": created_at,
-            "merged_pull_requests": merged_pull_requests,
             "collected_at": collected_at,
+            "merged_pull_requests": merged_pull_requests,
+            "releases_count": releases_count,
+            "closed_issues": closed_issues,
         }
-        for owner, name, created_at, merged_pull_requests, collected_at in rows
+        for (
+            owner,
+            name,
+            stargazer_count,
+            created_at,
+            collected_at,
+            merged_pull_requests,
+            releases_count,
+            closed_issues,
+        ) in rows
     ]
 
 
-def fetch_rest_created_at(owner, name, client):
-    data = client.get(f"https://api.github.com/repos/{owner}/{name}")
-    return data["created_at"]
-
-
-def fetch_merged_pr_count_via_rest_pagination(owner, name, client):
-    pulls = client.get_all_pages(
-        f"https://api.github.com/repos/{owner}/{name}/pulls?state=closed"
+def fetch_rest_releases_count(owner, name, client):
+    releases = client.get_all_pages(
+        f"https://api.github.com/repos/{owner}/{name}/releases"
     )
-    return sum(1 for pr in pulls if pr.get("merged_at") is not None)
+    return len(releases)
+
+
+def compute_star_velocity(stargazer_count, age_years):
+    return round(stargazer_count / age_years, 1)
+
+
+def compute_engagement_score(merged_pull_requests, releases_count, closed_issues, age_years):
+    return round((merged_pull_requests + releases_count + closed_issues) / age_years, 1)
 
 
 def validate_candidates(candidates, sample_size, client):
@@ -74,27 +78,27 @@ def validate_candidates(candidates, sample_size, client):
 
         label = f"{repo['owner']}/{repo['name']}"
         try:
-            rest_created_at = fetch_rest_created_at(repo["owner"], repo["name"], client)
-            rest_merged_count = fetch_merged_pr_count_via_rest_pagination(
-                repo["owner"], repo["name"], client
-            )
+            rest_releases_count = fetch_rest_releases_count(repo["owner"], repo["name"], client)
         except RestNotFoundError:
             skipped.append(label)
             continue
 
         age_years = compute_age_years(repo["created_at"], repo["collected_at"])
-        created_at_matches = repo["created_at"] == rest_created_at
-        merged_matches = repo["merged_pull_requests"] == rest_merged_count
+        star_velocity = compute_star_velocity(repo["stargazer_count"], age_years)
+        engagement_score = compute_engagement_score(
+            repo["merged_pull_requests"], repo["releases_count"], repo["closed_issues"], age_years
+        )
+        releases_matches = repo["releases_count"] == rest_releases_count
 
         results.append(
             {
                 "repo": label,
-                "created_at_query": repo["created_at"],
-                "created_at_rest": rest_created_at,
                 "age_years": age_years,
-                "merged_query": repo["merged_pull_requests"],
-                "merged_rest": rest_merged_count,
-                "matches": created_at_matches and merged_matches,
+                "star_velocity": star_velocity,
+                "engagement_score": engagement_score,
+                "releases_query": repo["releases_count"],
+                "releases_rest": rest_releases_count,
+                "matches": releases_matches,
             }
         )
     return results, skipped
@@ -104,30 +108,30 @@ def ensure_minimum_sample(results, minimum=MIN_SAMPLE_SIZE):
     if len(results) < minimum:
         raise InsufficientSampleError(
             f"apenas {len(results)} repositório(s) validado(s) com sucesso "
-            f"(mínimo exigido pela spec da issue #4: {minimum}). Aumente "
-            "--sample-size ou revise os repositórios pulados por 404."
+            f"(mínimo exigido: {minimum}). Aumente --sample-size ou revise os "
+            "repositórios pulados por 404."
         )
 
 
 def render_markdown_table(results):
     header = (
-        "| Repositório | `createdAt` (query) | `created_at` (REST API) | "
-        "Idade calculada (anos) | PRs merged (query) | PRs merged (paginação REST) | Bate? |\n"
+        "| Repositório | Idade (anos) | Releases (query) | Releases (REST) | "
+        "razão_estrelas | score_engajamento | Bate? |\n"
         "|---|---|---|---|---|---|---|\n"
     )
     rows = []
     for r in results:
         check = "✅" if r["matches"] else "❌"
         rows.append(
-            f"| {r['repo']} | {r['created_at_query']} | {r['created_at_rest']} | "
-            f"{r['age_years']} | {r['merged_query']} | {r['merged_rest']} | {check} |"
+            f"| {r['repo']} | {r['age_years']} | {r['releases_query']} | {r['releases_rest']} | "
+            f"{r['star_velocity']} | {r['engagement_score']} | {check} |"
         )
     return header + "\n".join(rows) + "\n"
 
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(
-        description="Valida RQ01/RQ02 cruzando dados coletados com a API REST/Search do GitHub."
+        description="Valida RQ08 cruzando releases_count com a API REST do GitHub."
     )
     parser.add_argument("--sample-size", type=int, default=DEFAULT_SAMPLE_SIZE)
     return parser
@@ -153,7 +157,7 @@ def main():
     if skipped:
         print(
             f"{len(skipped)} repositório(s) pulado(s) por indisponibilidade da "
-            f"listagem REST /pulls (ex.: has_issues=false): {', '.join(skipped)}\n"
+            f"listagem REST /releases: {', '.join(skipped)}\n"
         )
 
     ensure_minimum_sample(results)
@@ -161,8 +165,9 @@ def main():
     table = render_markdown_table(results)
     print(table)
 
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(table, encoding="utf-8")
-    print(f"\nTabela salva em {OUTPUT_PATH}")
+    print(f"Tabela salva em {OUTPUT_PATH}")
 
     mismatches = [r for r in results if not r["matches"]]
     if mismatches:

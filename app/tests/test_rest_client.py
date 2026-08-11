@@ -31,9 +31,6 @@ def http_error(code, headers=None, body=b'{"message": "error"}'):
     )
 
 
-# --- get: retry/backoff ---------------------------------------------------
-
-
 def test_get_raises_not_found_without_retrying(monkeypatch):
     attempts = {"count": 0}
 
@@ -119,9 +116,6 @@ def test_get_does_not_retry_on_permission_denied_403_without_retry_after(monkeyp
 
     with pytest.raises(RuntimeError):
         client.get("https://api.github.com/repos/owner/repo")
-
-
-# --- get_all_pages: pagination --------------------------------------------
 
 
 def test_get_all_pages_concatenates_full_pages_until_short_page(monkeypatch):

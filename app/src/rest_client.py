@@ -21,26 +21,14 @@ class _RetryableTransportError(RuntimeError):
 
 
 class RestClient:
-    """Cliente HTTP para a API REST do GitHub com retry/backoff automático.
-
-    Mesmo padrão de resiliência do GitHubGraphQLClient (client.py), adaptado
-    para chamadas GET à REST API. 404 nunca é retentável — vira RestNotFoundError.
-    """
-
     def __init__(self, token, max_attempts=DEFAULT_MAX_ATTEMPTS):
         self._token = token
         self._max_attempts = max_attempts
 
     def get(self, url):
-        """GET simples com retry. Retorna o corpo JSON como dict."""
         return self._with_exponential_backoff(lambda: self._request_once(url))
 
     def get_all_pages(self, url):
-        """Pagina até o fim retornando todos os itens concatenados numa lista.
-
-        Assume que a URL base aceita ?per_page=100&page=N e que a resposta é
-        uma lista JSON. Para quando a página retorna menos de 100 itens.
-        """
         all_items = []
         page = 1
         while True:
@@ -56,11 +44,6 @@ class RestClient:
         return all_items
 
     def _with_exponential_backoff(self, fn):
-        """Executa fn() repetindo apenas para _RetryableTransportError.
-
-        Erros fatais (400, 404, 422...) propagam imediatamente sem retry —
-        repetir uma requisição inválida não vai corrigi-la.
-        """
         last_error = None
         for attempt in range(1, self._max_attempts + 1):
             try:

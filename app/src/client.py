@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class GraphQLRequestError(RuntimeError):
-    pass
+    def __init__(self, message, retryable=False):
+        super().__init__(message)
+        self.retryable = retryable
 
 
 class _RetryableTransportError(RuntimeError):
@@ -61,7 +63,7 @@ class GitHubGraphQLClient:
                     delay_seconds,
                 )
                 time.sleep(delay_seconds)
-        raise GraphQLRequestError(str(last_error)) from last_error
+        raise GraphQLRequestError(str(last_error), retryable=True) from last_error
 
     def _execute_once(self, query, variables):
         request = self._build_request(query, variables)

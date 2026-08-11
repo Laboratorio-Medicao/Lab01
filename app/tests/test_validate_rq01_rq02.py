@@ -15,13 +15,6 @@ from tests.conftest import requires_supabase
 
 
 class FakeRestClient:
-    """Dublê de RestClient (src/rest_client.py) para testes desta camada.
-
-    validate_rq01_rq02 depende apenas de .get()/.get_all_pages() — a lógica
-    de retry/backoff em si é responsabilidade do RestClient e é testada
-    isoladamente em tests/test_rest_client.py.
-    """
-
     def __init__(self, get_result=None, get_all_pages_result=None, not_found=False):
         self._get_result = get_result
         self._get_all_pages_result = get_all_pages_result if get_all_pages_result is not None else []
@@ -42,16 +35,10 @@ def pull_request(merged=True):
     return {"merged_at": "2020-01-01T00:00:00Z" if merged else None}
 
 
-# --- compute_age_years -------------------------------------------------
-
-
 def test_compute_age_years_uses_365_25_days_per_year():
     age = compute_age_years("2020-01-01T00:00:00Z", "2024-01-01 00:00:00")
 
     assert age == round((4 * 365 + 1) / 365.25, 1)
-
-
-# --- fetch_candidate_pool ------------------------------------------------
 
 
 def repository_row(repository_id, merged_pull_requests):
@@ -90,9 +77,6 @@ def test_fetch_candidate_pool_orders_by_merged_pull_requests_ascending(db_connec
     assert [repo["merged_pull_requests"] for repo in pool] == [5, 20]
 
 
-# --- fetch_merged_pr_count_via_rest_pagination ---------------------------
-
-
 def test_fetch_merged_pr_count_counts_only_merged():
     client = FakeRestClient(
         get_all_pages_result=[pull_request(merged=True) for _ in range(103)]
@@ -110,9 +94,6 @@ def test_fetch_merged_pr_count_handles_no_pull_requests():
     count = fetch_merged_pr_count_via_rest_pagination("owner", "repo", client)
 
     assert count == 0
-
-
-# --- validate_candidates --------------------------------------------------
 
 
 def test_validate_candidates_skips_404_and_continues(monkeypatch):
@@ -206,9 +187,6 @@ def test_validate_candidates_flags_mismatch(monkeypatch):
     assert results[0]["matches"] is False
 
 
-# --- ensure_minimum_sample -------------------------------------------------
-
-
 def test_ensure_minimum_sample_raises_when_below_minimum():
     with pytest.raises(InsufficientSampleError):
         ensure_minimum_sample([{"repo": "a"}, {"repo": "b"}], minimum=5)
@@ -218,9 +196,6 @@ def test_ensure_minimum_sample_passes_when_at_or_above_minimum():
     results = [{"repo": str(i)} for i in range(5)]
 
     ensure_minimum_sample(results, minimum=5)
-
-
-# --- render_markdown_table -------------------------------------------------
 
 
 def test_render_markdown_table_marks_matches_and_mismatches():

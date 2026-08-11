@@ -1,10 +1,3 @@
-"""Exporta os repositórios coletados no Postgres (Supabase) para data/repos.csv
-(entregável exigido — ver README.md).
-
-Uso:
-    python src/export.py
-"""
-
 import csv
 import logging
 from pathlib import Path

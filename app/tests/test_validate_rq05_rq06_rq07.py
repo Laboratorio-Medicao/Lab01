@@ -13,8 +13,6 @@ from tests.conftest import requires_supabase
 
 
 class FakeRestClient:
-    """Dublê de RestClient — ver mesmo padrão em test_validate_rq01_rq02.py."""
-
     def __init__(self, get_result=None, get_all_pages_result=None, not_found=False):
         self._get_result = get_result or {}
         self._get_all_pages_result = get_all_pages_result if get_all_pages_result is not None else []
@@ -50,9 +48,6 @@ def repository_row(repository_id, owner, name, primary_language, open_issues, cl
     }
 
 
-# --- fetch_candidate_pool (integração real com Postgres) ------------------
-
-
 @requires_supabase
 def test_fetch_candidate_pool_includes_zero_issues_repo_and_orders_rest_ascending(db_connection):
     storage.init_db(db_connection)
@@ -71,9 +66,6 @@ def test_fetch_candidate_pool_includes_zero_issues_repo_and_orders_rest_ascendin
     assert pool[0]["open_issues"] + pool[0]["closed_issues"] == 0
     remaining = [(r["owner"], r["open_issues"] + r["closed_issues"]) for r in pool[1:]]
     assert remaining == sorted(remaining, key=lambda item: item[1])
-
-
-# --- validate_candidates -----------------------------------------------
 
 
 def test_validate_candidates_skips_404_and_continues():
@@ -151,9 +143,6 @@ def test_validate_candidates_excludes_pull_requests_from_closed_issues_count():
     assert results[0].issues_match is True
 
 
-# --- ensure_minimum_sample -------------------------------------------------
-
-
 def test_ensure_minimum_sample_raises_when_below_minimum():
     with pytest.raises(InsufficientSampleError):
         ensure_minimum_sample([{"repo": "a"}], minimum=5)
@@ -164,9 +153,6 @@ def test_ensure_minimum_sample_passes_when_at_or_above_minimum():
         pass
 
     ensure_minimum_sample([Result() for _ in range(5)], minimum=5)
-
-
-# --- render_markdown_table -------------------------------------------------
 
 
 def test_render_markdown_table_marks_matches_mismatches_and_zero_issues():

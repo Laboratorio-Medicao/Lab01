@@ -2,10 +2,6 @@ import psycopg2
 
 from src.config import get_supabase_connection_params
 
-# Nomes de tabela module-level (não constantes fixas em SQL pré-formatado) para
-# que os testes possam apontar para tabelas isoladas (test_repositories,
-# test_collection_state) via monkeypatch, sem tocar nos dados reais do time —
-# ver tests/conftest.py.
 REPOSITORIES_TABLE = "repositories"
 COLLECTION_STATE_TABLE = "collection_state"
 
