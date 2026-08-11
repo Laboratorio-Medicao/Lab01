@@ -4,6 +4,46 @@ Este documento registra decisões metodológicas tomadas durante a coleta, para
 que os números do Relatório Final sejam reprodutíveis e defensáveis. Cada
 seção corresponde a uma decisão da especificação da Issue #4.
 
+## Armazenamento — Postgres (Supabase) em vez de SQLite local
+
+**Decisão:** os dados coletados são persistidos em um banco Postgres
+compartilhado (projeto Supabase do grupo), não em CSV solto nem em SQLite
+local por integrante.
+
+**Por que um banco, e não só CSV:**
+
+1. **Coleta incremental/retomável.** A busca dos 1.000 repositórios (S02) é
+   feita em múltiplos lotes (25 por página — ver README, seção "Rate limit e
+   tamanho de página"), não em uma única requisição. Se o script for
+   interrompido no meio, o cursor da última página e o total já coletado
+   ficam salvos em `collection_state`; a próxima execução retoma dali, sem
+   reprocessar repositórios já salvos.
+2. **Agregação com SQL.** RQ07 depende de agrupar RQ02/RQ03/RQ04 por
+   linguagem (RQ05) — um `GROUP BY primary_language` é mais direto e menos
+   sujeito a erro do que reimplementar a agregação em listas/dicionários
+   Python.
+
+**Por que Postgres/Supabase, e não SQLite:** o projeto começou com SQLite
+local (ver commits iniciais do client GraphQL), mas cada integrante tinha seu
+próprio arquivo `repos.db` isolado — ninguém além de quem rodou a coleta
+localmente conseguia consultar os dados dos outros. A migração para um
+projeto Postgres compartilhado no Supabase elimina essa fragmentação: todo o
+time lê/escreve o mesmo banco, sem sincronizar arquivo `.db` manualmente. As
+duas razões acima (coleta incremental + análise com SQL) já valiam para o
+SQLite; só a camada física mudou.
+
+**Conexão via pooler, não conexão direta:** o host de conexão direta do
+Supabase (`db.<ref>.supabase.co`) só resolve endereço IPv6, o que falha em
+redes sem suporte a IPv6 (comum em redes domésticas/4G de alguns
+integrantes). Por isso o `.env.example` aponta para o host do **Connection
+Pooling** (`aws-0-<region>.pooler.supabase.com`, modo *Transaction*, porta
+6543), não para o host de conexão direta.
+
+**Por que `psycopg2` não viola a regra de "sem bibliotecas de terceiros":**
+o enunciado proíbe bibliotecas de terceiros que **consultem a API do
+GitHub** — a coleta em si usa só `urllib` (stdlib). O `psycopg2` fala com o
+banco Postgres, não com a API do GitHub, então está fora dessa restrição.
+
 ## RQ01 — Idade do repositório
 
 **Campo fonte:** `createdAt` (GraphQL, ISO 8601 UTC).
