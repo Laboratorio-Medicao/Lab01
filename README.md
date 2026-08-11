@@ -139,6 +139,6 @@ python kanban/export_kanban.py
 
 ## Links
 
-- **Repositório:** https://github.com/Laboratorio-Medicao/Lab01
+- **Repositório:** https://github.com/Laboratorio-Medicao/Lab01-v2
 - **GitHub Projects (Kanban):** `<preencher após criação>`
 - **Relatório Final:** `<preencher após entrega>`
