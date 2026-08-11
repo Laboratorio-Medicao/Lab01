@@ -1,6 +1,6 @@
 """Valida RQ01 (idade do repositório) e RQ02 (PRs merged) contra fontes
 independentes da API REST/Search do GitHub, para uma amostra dos repositórios
-já coletados em data/repos.db.
+já coletados no Postgres (Supabase).
 
 Uso:
     python -m src.validate_rq01_rq02 [--sample-size N]
@@ -22,6 +22,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src import storage
 from src.config import get_github_token
 from src.storage import get_connection
 
@@ -72,15 +73,17 @@ def fetch_candidate_pool(connection, pool_size):
     # reais do top-estrelas coletado, e cobrem o caso de nulo/zero da seção 3.5 da spec.
     # O pool é maior que a amostra final porque alguns repositórios têm a listagem REST
     # de /pulls indisponível (has_issues=false) e são pulados — ver fetch_merged_pr_count.
-    rows = connection.execute(
-        """
-        SELECT owner, name, created_at, merged_pull_requests, collected_at
-        FROM repositories
-        ORDER BY merged_pull_requests ASC
-        LIMIT ?
-        """,
-        (pool_size,),
-    ).fetchall()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT owner, name, created_at, merged_pull_requests, collected_at
+            FROM {storage.REPOSITORIES_TABLE}
+            ORDER BY merged_pull_requests ASC
+            LIMIT %s
+            """,
+            (pool_size,),
+        )
+        rows = cursor.fetchall()
     return [
         {
             "owner": owner,
@@ -263,7 +266,7 @@ def main():
             connection, args.sample_size * CANDIDATE_POOL_MULTIPLIER
         )
         if not candidates:
-            raise RuntimeError("nenhum repositório encontrado em data/repos.db — rode o coletor antes")
+            raise RuntimeError("nenhum repositório encontrado no banco — rode o coletor antes")
 
         results, skipped = validate_candidates(candidates, args.sample_size, token)
     finally:

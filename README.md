@@ -31,9 +31,9 @@ GitHub GraphQL API
         │
         ▼
    [Coleta]  ←── client HTTP próprio com fila de rate limit
-        │         armazena incrementalmente em SQLite
-        ▼         (permite retomar coleta interrompida)
-   [Banco]   ←── SQLite local (repos.db)
+        │         persiste incrementalmente no Postgres (Supabase)
+        ▼         (permite retomar coleta interrompida, time todo lê o mesmo banco)
+   [Banco]   ←── Postgres compartilhado (Supabase — ver "Configuração do Supabase")
         │
         ├──▶ [Análise]    ←── Python + pandas + seaborn/matplotlib
         │         │              uma pessoa por grupo de RQs
@@ -43,15 +43,19 @@ GitHub GraphQL API
         └──▶ [Dashboard]  ←── plotly → dashboard.html interativo
 ```
 
-**Por que SQLite?** Dois motivos documentados na metodologia:
+**Por que um banco (e não só o CSV)?** Dois motivos documentados na metodologia:
 1. **Coleta incremental:** se o script falhar no meio dos 1.000 repos, retoma do último cursor salvo sem reprocessar.
 2. **Análise com SQL:** aggregations por linguagem (RQ07) são mais expressivas com `GROUP BY` do que com manipulação manual de listas.
 
-**Por que `urllib` e não `requests`?** O enunciado proíbe bibliotecas de terceiros que consultem a API do GitHub. O `urllib.request` é built-in e cobre exatamente o que precisamos, evitando qualquer ambiguidade na interpretação da regra.
+**Por que Postgres/Supabase (e não SQLite local)?** O projeto começou com SQLite local, mas cada integrante tinha seu próprio `repos.db` isolado — ninguém além de quem rodou a coleta conseguia consultar os dados. Migramos para um projeto Postgres compartilhado no Supabase: todo o time lê/escreve o mesmo banco, sem precisar sincronizar arquivo `.db` manualmente. As duas razões do SQLite (coleta incremental + análise com SQL) continuam valendo — só a camada física mudou.
+
+**Conexão via pooler, não conexão direta:** o host de conexão direta do Supabase (`db.<ref>.supabase.co`) só resolve endereço IPv6, o que falha em redes sem suporte a IPv6 (comum em algumas redes domésticas/4G). Use o host do **Connection Pooling** (`aws-0-<region>.pooler.supabase.com`, modo *Transaction*, porta 6543) — ver `.env.example`.
+
+**Por que `urllib` e não `requests`?** O enunciado proíbe bibliotecas de terceiros que consultem a API do GitHub. O `urllib.request` é built-in e cobre exatamente o que precisamos, evitando qualquer ambiguidade na interpretação da regra. (O driver `psycopg2` é third-party, mas fala com o banco — não com a API do GitHub — então está fora dessa restrição.)
 
 **Rate limit:** a API GraphQL do GitHub limita a 5.000 pontos/hora. Cada resposta retorna `rateLimit.remaining` e `rateLimit.resetAt`. O client monitora esse campo e dorme até o reset quando o saldo está abaixo de um threshold definido — sem perda de dados e sem requisições desnecessárias. Também é comum receber um HTTP 403 de rate limit secundário (abuso por rajada de requisições) com header `Retry-After`; o client trata isso como erro retentável e espera o tempo indicado antes de tentar de novo.
 
-**Rate limit e tamanho de página (por que o batch é 25, não 100):** testamos a `REPOSITORY_SEARCH_QUERY` diretamente contra a API em 2026-08-08 variando `perPage`. A partir de `perPage=40` o GitHub passou a responder **HTTP 502 (Bad Gateway)** de forma consistente; até `perPage=35` a resposta veio OK. A hipótese mais provável é o custo de computar `totalCount` de `pullRequests`, `releases` e `issues` (open/closed) para muitos repositórios na mesma resposta, o que aparentemente estoura algum timeout do lado do GitHub — não é um limite documentado oficialmente pela API, é um comportamento observado empiricamente, que pode variar com carga do servidor. Por segurança, o coletor usa **25 como tamanho de lote padrão** (`DEFAULT_BATCH_SIZE` em `collector.py`), com folga do limiar de 35-40 observado. Essa é uma decisão de metodologia que vale citar no relatório final: a coleta dos 100 (S01) e dos 1.000 (S02) repositórios não é feita em uma única requisição GraphQL, e sim em múltiplos lotes menores, com o estado (cursor + total já coletado) persistido em SQLite entre lotes — o que também é o mecanismo que permite retomar uma coleta interrompida sem reprocessar repositórios já salvos.
+**Rate limit e tamanho de página (por que o batch é 25, não 100):** testamos a `REPOSITORY_SEARCH_QUERY` diretamente contra a API em 2026-08-08 variando `perPage`. A partir de `perPage=40` o GitHub passou a responder **HTTP 502 (Bad Gateway)** de forma consistente; até `perPage=35` a resposta veio OK. A hipótese mais provável é o custo de computar `totalCount` de `pullRequests`, `releases` e `issues` (open/closed) para muitos repositórios na mesma resposta, o que aparentemente estoura algum timeout do lado do GitHub — não é um limite documentado oficialmente pela API, é um comportamento observado empiricamente, que pode variar com carga do servidor. Por segurança, o coletor usa **25 como tamanho de lote padrão** (`DEFAULT_BATCH_SIZE` em `collector.py`), com folga do limiar de 35-40 observado. Essa é uma decisão de metodologia que vale citar no relatório final: a coleta dos 100 (S01) e dos 1.000 (S02) repositórios não é feita em uma única requisição GraphQL, e sim em múltiplos lotes menores, com o estado (cursor + total já coletado) persistido no Postgres entre lotes — o que também é o mecanismo que permite retomar uma coleta interrompida sem reprocessar repositórios já salvos.
 
 ---
 
@@ -73,18 +77,27 @@ GitHub GraphQL API
 ```bash
 cd app
 
-# Configuração do token (uma vez)
+# Configuração (uma vez por pessoa)
 cp .env.example .env
-# edite .env e defina GITHUB_TOKEN=<token com escopo public_repo>
+# edite .env e preencha:
+#   GITHUB_TOKEN=<token com escopo public_repo>
+#   SUPABASE_HOST/PORT/DB_NAME/USER/PASSWORD  (peça as credenciais do projeto
+#   Supabase do grupo a quem criou o projeto — todo mundo aponta pro mesmo
+#   banco. Use o host do Connection Pooling, não o de conexão direta — ver
+#   "Conexão via pooler" acima)
 
-# Dependências de desenvolvimento (runtime não tem dependências externas)
+# Dependências (psycopg2 para o Postgres; coleta em si só usa stdlib)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 
-# Testes automatizados
+# Testes automatizados (os que tocam o banco usam tabelas isoladas —
+# test_repositories/test_collection_state — e são pulados se o .env não
+# tiver as variáveis do Supabase configuradas)
 pytest
 
-# Coleta (salva em data/repos.db, retomável se interrompida)
+# Coleta (grava no Postgres compartilhado, retomável se interrompida —
+# o cursor fica salvo em collection_state, então qualquer pessoa do time
+# pode continuar de onde a última coleta parou)
 # --per-page controla o tamanho de cada requisição à API (padrão 25 — ver
 # "Rate limit e tamanho de página" acima sobre por que não usar 100 direto).
 # --total, se informado, encadeia lotes de --per-page até atingir a meta.
@@ -96,8 +109,8 @@ python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginaç
 # gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
 python -m src.validate_rq01_rq02 --sample-size 8
 
-# Export para CSV
-python src/export.py
+# Export para CSV (lê do Postgres, grava data/repos.csv)
+python -m src.export
 
 # Análise por RQ
 python analysis/rq01_02.py
