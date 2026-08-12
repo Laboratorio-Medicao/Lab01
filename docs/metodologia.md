@@ -236,3 +236,30 @@ Duas observações técnicas relevantes encontradas durante a validação:
 Resultado: nos 8 repositórios validados com sucesso, `createdAt` e
 `mergedPullRequests` bateram 100% com a REST API (ver tabela em
 `docs/validacao-rq01-rq02.md`).
+
+## RQ03/RQ04 — Releases e última atualização
+
+**Campo fonte de RQ03:** `releases_count` (GraphQL, `totalCount` da conexão
+de releases).
+
+**Campo fonte de RQ04:** `pushed_at` (GraphQL/REST, timestamp ISO 8601 UTC
+do último push no repositório).
+
+**Validação cruzada prevista/implementada:** o script
+`app/src/validate_rq03_rq04.py` cruza os dados coletados com a REST API do
+GitHub em uma amostra pequena (5–10 repositórios, via `--sample-size`).
+
+- RQ03 confere `releases_count` contra `GET /repos/{owner}/{repo}/releases`,
+  contando todos os itens paginados até o fim da listagem.
+- RQ04 confere `pushed_at` salvo no banco contra o `pushed_at` retornado por
+  `GET /repos/{owner}/{repo}`.
+
+**Critério de comparação:** igualdade exata de string para `pushed_at` e
+igualdade de contagem inteira para `releases_count`. Repositórios com `404`
+na REST API são pulados e a amostra continua com os próximos candidatos, no
+mesmo padrão dos validadores de RQ01/RQ02 e RQ05/RQ06.
+
+**Motivo metodológico:** essa validação fecha a base empírica da RQ07, que
+agrega RQ02/RQ03/RQ04 por linguagem. Sem validar RQ03 e RQ04 isoladamente,
+qualquer conclusão sobre diferenças por linguagem ficaria apoiada em campos
+sem conferência cruzada própria.
