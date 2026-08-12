@@ -114,6 +114,10 @@ python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginaç
 # gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
 python -m src.validate_rq01_rq02 --sample-size 8
 
+# Validação cruzada RQ03/RQ04 contra a API REST do GitHub
+# gera docs/validacao-rq03-rq04.md
+python -m src.validate_rq03_rq04 --sample-size 8
+
 # Validação cruzada RQ05/RQ06 contra a API REST do GitHub (Issue #6)
 # gera docs/validacao-rq05-rq06.md
 python -m src.validate_rq05_rq06 --sample-size 8
