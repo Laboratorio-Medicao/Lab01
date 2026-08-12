@@ -141,6 +141,24 @@ python kanban/export_kanban.py
 
 ---
 
+## Configuração do Processo (GitHub Projects)
+
+O grupo utiliza um **GitHub Projects v2** com o seguinte board Kanban:
+
+| Coluna | Descrição |
+|--------|-----------|
+| **Backlog** | Tarefas identificadas mas ainda não priorizadas |
+| **To Do** | Tarefas priorizadas para a sprint atual |
+| **Doing** | Tarefas em andamento — sujeitas ao limite de WIP |
+| **Review** | Tarefas concluídas aguardando revisão do grupo |
+| **Done** | Tarefas concluídas e validadas |
+
+**Limite de WIP (Work in Progress):** `6 itens na coluna Doing`
+
+**Justificativa:** O grupo é formado por 3 integrantes. Definimos WIP = 6 (2 por integrante) para acomodar situações em que uma tarefa está bloqueada aguardando revisão de outro membro, permitindo que o integrante inicie uma segunda tarefa sem paralisar o fluxo. Esse limite evita sobrecarga excessiva e mantém visibilidade sobre o trabalho em andamento.
+
+---
+
 ## Equipe
 
 | Integrante | RQs | Responsabilidade principal |
