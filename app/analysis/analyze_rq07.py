@@ -1,21 +1,3 @@
-"""Análise RQ07 (bônus): sistemas em linguagens mais populares recebem mais
-contribuição externa (RQ02), lançam mais releases (RQ03) e são atualizados
-com mais frequência (RQ04)?
-
-Metodologia:
-- Agrupa todos os repositórios por primary_language
-- Mantém apenas linguagens com pelo menos MIN_REPOS_PER_LANGUAGE repositórios
-- Ordena linguagens por número de repositórios (popularidade)
-- Calcula mediana de merged_pull_requests (RQ02), releases_count (RQ03) e
-  dias_desde_push (RQ04) por linguagem
-- Mediana é mais robusta que média para distribuições com cauda longa (estrelas)
-
-Uso:
-    python -m src.analyze_rq07 [--top N] [--min-repos M]
-
-Gera tabela Markdown em stdout e em docs/analise-rq07.md.
-"""
-
 from __future__ import annotations
 
 import argparse
