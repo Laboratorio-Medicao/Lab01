@@ -1,7 +1,7 @@
 import pytest
 
 from src import storage
-from src.validate_rq05_rq06_rq07 import (
+from src.validate_rq05_rq06 import (
     InsufficientSampleError,
     RestNotFoundError,
     ensure_minimum_sample,
@@ -156,7 +156,7 @@ def test_ensure_minimum_sample_passes_when_at_or_above_minimum():
 
 
 def test_render_markdown_table_marks_matches_mismatches_and_zero_issues():
-    from src.validate_rq05_rq06_rq07 import ValidationResult
+    from src.validate_rq05_rq06 import ValidationResult
 
     results = [
         ValidationResult(

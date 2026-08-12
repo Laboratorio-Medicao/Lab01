@@ -116,7 +116,7 @@ python -m src.validate_rq01_rq02 --sample-size 8
 
 # Validação cruzada RQ05/RQ06 contra a API REST do GitHub (Issue #6)
 # gera docs/validacao-rq05-rq06.md
-python -m src.validate_rq05_rq06_rq07 --sample-size 8
+python -m src.validate_rq05_rq06 --sample-size 8
 
 # Validação cruzada RQ08 (releases_count) contra a API REST do GitHub
 # gera docs/validacao-rq08.md — os demais campos usados em RQ08 (idade, PRs
