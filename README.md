@@ -2,7 +2,7 @@
 
 Laboratório 01 da disciplina **Laboratório de Experimentação de Software** — Engenharia de Software, 6º período.
 
-O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo seis questões de pesquisa sobre maturidade, contribuição, frequência de releases, atualização, linguagem e qualidade de issues — mais duas questões bônus (RQ07, do enunciado, e RQ08, extra do grupo).
+O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo seis questões de pesquisa sobre maturidade, contribuição, frequência de releases, atualização, linguagem e qualidade de issues — mais uma questão bônus (RQ07, do enunciado).
 
 ---
 
@@ -17,9 +17,6 @@ O objetivo é coletar e analisar dados dos **1.000 repositórios com maior núme
 | RQ05 | Sistemas populares são escritos nas linguagens mais populares? | Linguagem primária de cada repositório |
 | RQ06 | Sistemas populares possuem alto percentual de issues fechadas? | Razão entre issues fechadas e total de issues |
 | RQ07 ⭐ | Sistemas em linguagens populares recebem mais contribuição, releases e atualizações? | RQ02, RQ03 e RQ04 segmentados por linguagem |
-| RQ08 ⭐ (extra) | Repositórios populares muito jovens acumulam estrelas de forma desproporcional à sua atividade real de manutenção? | `stargazer_count / idade` vs. score de engajamento (PRs merged + releases + issues fechadas, normalizado por idade), comparados por tercil de idade |
-
-RQ08 é um bônus adicional do grupo (não pedido no enunciado), motivado por um achado da própria coleta: ver `docs/metodologia.md`, seção "Risco de dados: repositórios jovens com alto número de estrelas".
 
 A referência adotada para "linguagens mais populares" é o **GitHub Octoverse** (fonte: octoverse.github.com), mantida ao longo de todo o laboratório.
 
@@ -121,11 +118,6 @@ python -m src.validate_rq03_rq04 --sample-size 8
 # Validação cruzada RQ05/RQ06 contra a API REST do GitHub (Issue #6)
 # gera docs/validacao-rq05-rq06.md
 python -m src.validate_rq05_rq06 --sample-size 8
-
-# Validação cruzada RQ08 (releases_count) contra a API REST do GitHub
-# gera docs/validacao-rq08.md — os demais campos usados em RQ08 (idade, PRs
-# merged, issues fechadas) já são validados pelos dois scripts acima
-python -m src.validate_rq08 --sample-size 8
 
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export

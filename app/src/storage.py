@@ -104,7 +104,8 @@ def upsert_repositories(connection, repos):
                 releases_count = EXCLUDED.releases_count,
                 open_issues = EXCLUDED.open_issues,
                 closed_issues = EXCLUDED.closed_issues,
-                raw_json = EXCLUDED.raw_json
+                raw_json = EXCLUDED.raw_json,
+                collected_at = to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD HH24:MI:SS')
             """,
             repos,
         )

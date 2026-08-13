@@ -77,8 +77,14 @@ def fetch_rest_repo_data(owner, name, client):
     data = client.get(f"https://api.github.com/repos/{owner}/{name}")
     return {
         "language": data.get("language"),
-        "open_issues_count": data.get("open_issues_count", 0),
     }
+
+
+def fetch_rest_open_issues_count(owner, name, client):
+    items = client.get_all_pages(
+        f"https://api.github.com/repos/{owner}/{name}/issues?state=open"
+    )
+    return sum(1 for item in items if "pull_request" not in item)
 
 
 def fetch_rest_closed_issues_count(owner, name, client):
@@ -99,6 +105,7 @@ def validate_candidates(candidates, sample_size, client):
         label = f"{repo['owner']}/{repo['name']}"
         try:
             rest_data = fetch_rest_repo_data(repo["owner"], repo["name"], client)
+            rest_open = fetch_rest_open_issues_count(repo["owner"], repo["name"], client)
             rest_closed = fetch_rest_closed_issues_count(repo["owner"], repo["name"], client)
         except RestNotFoundError:
             skipped.append(label)
@@ -109,17 +116,20 @@ def validate_candidates(candidates, sample_size, client):
         lang_query = repo["primary_language"] or None
         lang_rest = rest_data["language"] or None
 
+        open_issues_matches = repo["open_issues"] == rest_open
+        closed_issues_matches = repo["closed_issues"] == rest_closed
+
         results.append(ValidationResult(
             repo=label,
             language_query=lang_query,
             language_rest=lang_rest,
             open_issues_query=repo["open_issues"],
-            open_issues_rest=rest_data["open_issues_count"],
+            open_issues_rest=rest_open,
             closed_issues_query=repo["closed_issues"],
             closed_issues_rest=rest_closed,
             zero_issues=zero_issues,
             language_matches=lang_query == lang_rest,
-            issues_match=repo["closed_issues"] == rest_closed,
+            issues_match=open_issues_matches and closed_issues_matches,
         ))
 
     return results, skipped
@@ -142,7 +152,7 @@ def render_markdown_table(results):
     header = (
         "| Repositório "
         "| `primaryLanguage` (query) | `language` (REST) "
-        "| `openIssues` (query) | `open_issues_count` (REST) "
+        "| `openIssues` (query) | issues abertas (REST) "
         "| `closedIssues` (query) | issues fechadas (REST) "
         "| Zero issues? | Linguagem bate? | Issues batem? |\n"
         "|---|---|---|---|---|---|---|---|---|---|\n"

@@ -122,50 +122,6 @@ não um problema na coleta. Vale considerar, em S03, uma análise de
 sensibilidade (mediana com e sem outliers de idade) para não deixar esse
 efeito mascarado nos números agregados.
 
-## RQ08 (bônus extra do grupo) — Velocidade de estrelas vs. engajamento real
-
-**Pergunta:** repositórios populares muito jovens acumulam estrelas de forma
-desproporcional à sua atividade real de manutenção, em comparação com
-repositórios populares maduros?
-
-**Motivação:** não é uma pergunta de template — nasce diretamente do achado
-já documentado acima em "Risco de dados: repositórios jovens com alto número
-de estrelas" (16% da amostra de S01 com <1,5 anos de idade e >100 mil
-estrelas, padrão consistente com *star-farming* em 2025-2026). RQ01 apenas
-registra a idade; RQ08 testa formalmente se esse descolamento entre estrelas
-e atividade é sistemático ou isolado a poucos casos, usando só os campos já
-coletados (sem nova consulta GraphQL nem re-coleta).
-
-**Métricas:**
-
-```
-razão_estrelas    = stargazer_count / idade_em_anos
-score_engajamento = (merged_pull_requests + releases_count + closed_issues) / idade_em_anos
-```
-
-- `idade_em_anos`: mesma fórmula da RQ01 (`(collected_at - created_at) / 365.25`).
-- Ambas as métricas são normalizadas por idade para que um repositório maduro
-  com números absolutos altos (que teve mais tempo para acumular estrelas
-  *e* atividade) não seja comparado diretamente com um repositório jovem em
-  termos absolutos — o que importa é a *taxa*, não o total.
-
-**Método de comparação:** os 1.000 repositórios são divididos em tercis de
-idade (jovem/médio/maduro). Dentro de cada tercil, compara-se a distribuição
-de `razão_estrelas` com a de `score_engajamento`. A hipótese informal é que,
-no tercil mais jovem, `razão_estrelas` é desproporcionalmente alta em relação
-a `score_engajamento` (muitas estrelas, pouca atividade de manutenção
-correspondente) — um padrão que não deve se repetir com a mesma intensidade
-nos tercis médio e maduro, onde estrelas tendem a acompanhar anos de PRs,
-releases e resolução de issues.
-
-**Limitação assumida:** assim como em RQ01, não há um critério objetivo e
-gratuito para provar que uma estrela é "comprada" — RQ08 mede *correlação*
-entre velocidade de popularidade e velocidade de atividade, não intenção. Um
-repositório jovem com `razão_estrelas` alta e `score_engajamento` baixo é
-reportado como *sinal* de descolamento, não como acusação de fraude; casos
-como `anthropics/*` (organização já estabelecida, tração de mercado
-legítima) são o contraponto esperado dentro do próprio tercil jovem.
-
 ## RQ02 — Pull requests aceitas
 
 **Campo fonte:** `mergedPullRequests: pullRequests(states: MERGED) { totalCount }`.
@@ -263,3 +219,39 @@ mesmo padrão dos validadores de RQ01/RQ02 e RQ05/RQ06.
 agrega RQ02/RQ03/RQ04 por linguagem. Sem validar RQ03 e RQ04 isoladamente,
 qualquer conclusão sobre diferenças por linguagem ficaria apoiada em campos
 sem conferência cruzada própria.
+
+## RQ05/RQ06 — Linguagem primária e issues fechadas
+
+**Campo fonte de RQ05:** `primaryLanguage.name` (GraphQL). Comparado contra
+`language` da REST API (`GET /repos/{owner}/{repo}`) — mesmo campo, sem
+transformação, então a comparação é direta (igualdade de string ou `null`
+dos dois lados).
+
+**Campo fonte de RQ06:** `issues(states: OPEN) { totalCount }` e
+`issues(states: CLOSED) { totalCount }` (GraphQL).
+
+**Validação cruzada (`app/src/validate_rq05_rq06.py`):** ambos os lados de
+RQ06 — issues abertas **e** fechadas — são conferidos contra a REST API,
+paginando `GET /repos/{owner}/{repo}/issues?state=open` e
+`?state=closed` até o fim da listagem e descartando itens que trazem a
+chave `pull_request` (a REST API do GitHub mistura pull requests na
+listagem de "issues" de um repositório).
+
+**Por que não usar o campo `open_issues_count` do `GET /repos/{owner}/{repo}`
+para conferir `openIssues`:** esse campo da REST API soma issues **e**
+pull requests abertas em um único número — não é comparável a
+`issues(states: OPEN).totalCount` do GraphQL, que conta só issues. Usar
+esse campo direto produziria falsos negativos de validação em qualquer
+repositório com PRs abertas (a maioria dos populares). Por isso o script
+pagina `/issues?state=open` e aplica o mesmo filtro de exclusão de PRs já
+usado do lado de `closedIssues` — mantendo os dois lados da RQ06 (aberto e
+fechado) na mesma base de comparação "só issues".
+
+**Nota sobre divergências esperadas na tabela de validação:** como a
+validação roda em um momento posterior à coleta, é normal que `openIssues`/
+`closedIssues` divirjam da REST API para repositórios ativos — issues
+continuam sendo abertas/fechadas entre a coleta e a validação. Uma
+divergência só é motivo de investigação se a **soma** (`open + closed`)
+também mudar de forma inconsistente com "algumas issues fechadas entre a
+coleta e a validação" (nesse caso o total se mantém constante, só migra de
+aberta para fechada).

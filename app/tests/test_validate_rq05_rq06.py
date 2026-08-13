@@ -13,9 +13,16 @@ from tests.conftest import requires_supabase
 
 
 class FakeRestClient:
-    def __init__(self, get_result=None, get_all_pages_result=None, not_found=False):
+    def __init__(
+        self,
+        get_result=None,
+        open_issues_result=None,
+        closed_issues_result=None,
+        not_found=False,
+    ):
         self._get_result = get_result or {}
-        self._get_all_pages_result = get_all_pages_result if get_all_pages_result is not None else []
+        self._open_issues_result = open_issues_result if open_issues_result is not None else []
+        self._closed_issues_result = closed_issues_result if closed_issues_result is not None else []
         self._not_found = not_found
 
     def get(self, url):
@@ -26,7 +33,9 @@ class FakeRestClient:
     def get_all_pages(self, url):
         if self._not_found:
             raise RestNotFoundError(f"404 em {url}")
-        return self._get_all_pages_result
+        if "state=open" in url:
+            return self._open_issues_result
+        return self._closed_issues_result
 
 
 def repository_row(repository_id, owner, name, primary_language, open_issues, closed_issues):
@@ -78,12 +87,12 @@ def test_validate_candidates_skips_404_and_continues():
         def get(self, url):
             if "broken" in url:
                 raise RestNotFoundError("404")
-            return {"language": "Python", "open_issues_count": 1}
+            return {"language": "Python"}
 
         def get_all_pages(self, url):
             if "broken" in url:
                 raise RestNotFoundError("404")
-            return [{"title": "closed issue"}]
+            return [{"title": "an issue"}]
 
     results, skipped = validate_candidates(candidates, sample_size=5, client=RoutingClient())
 
@@ -98,8 +107,9 @@ def test_validate_candidates_flags_language_and_issues_mismatch():
         {"owner": "octocat", "name": "example", "primary_language": "Python", "open_issues": 1, "closed_issues": 5},
     ]
     client = FakeRestClient(
-        get_result={"language": "JavaScript", "open_issues_count": 1},
-        get_all_pages_result=[{"title": f"issue {i}"} for i in range(3)],
+        get_result={"language": "JavaScript"},
+        open_issues_result=[{"title": f"open issue {i}"} for i in range(3)],
+        closed_issues_result=[{"title": f"closed issue {i}"} for i in range(3)],
     )
 
     results, skipped = validate_candidates(candidates, sample_size=5, client=client)
@@ -109,13 +119,33 @@ def test_validate_candidates_flags_language_and_issues_mismatch():
     assert results[0].matches is False
 
 
+def test_validate_candidates_flags_open_issues_mismatch_even_when_closed_matches():
+    candidates = [
+        {"owner": "octocat", "name": "example", "primary_language": "Python", "open_issues": 1, "closed_issues": 5},
+    ]
+    client = FakeRestClient(
+        get_result={"language": "Python"},
+        open_issues_result=[{"title": f"open issue {i}"} for i in range(9)],
+        closed_issues_result=[{"title": f"closed issue {i}"} for i in range(5)],
+    )
+
+    results, skipped = validate_candidates(candidates, sample_size=5, client=client)
+
+    assert results[0].language_matches is True
+    assert results[0].open_issues_rest == 9
+    assert results[0].closed_issues_rest == 5
+    assert results[0].issues_match is False
+    assert results[0].matches is False
+
+
 def test_validate_candidates_normalizes_null_language():
     candidates = [
         {"owner": "octocat", "name": "example", "primary_language": None, "open_issues": 0, "closed_issues": 0},
     ]
     client = FakeRestClient(
-        get_result={"language": None, "open_issues_count": 0},
-        get_all_pages_result=[],
+        get_result={"language": None},
+        open_issues_result=[],
+        closed_issues_result=[],
     )
 
     results, skipped = validate_candidates(candidates, sample_size=5, client=client)
@@ -129,8 +159,9 @@ def test_validate_candidates_excludes_pull_requests_from_closed_issues_count():
         {"owner": "octocat", "name": "example", "primary_language": "Python", "open_issues": 0, "closed_issues": 2},
     ]
     client = FakeRestClient(
-        get_result={"language": "Python", "open_issues_count": 0},
-        get_all_pages_result=[
+        get_result={"language": "Python"},
+        open_issues_result=[],
+        closed_issues_result=[
             {"title": "real issue 1"},
             {"title": "real issue 2"},
             {"title": "a PR", "pull_request": {"url": "..."}},
@@ -140,6 +171,26 @@ def test_validate_candidates_excludes_pull_requests_from_closed_issues_count():
     results, skipped = validate_candidates(candidates, sample_size=5, client=client)
 
     assert results[0].closed_issues_rest == 2
+    assert results[0].issues_match is True
+
+
+def test_validate_candidates_excludes_pull_requests_from_open_issues_count():
+    candidates = [
+        {"owner": "octocat", "name": "example", "primary_language": "Python", "open_issues": 2, "closed_issues": 0},
+    ]
+    client = FakeRestClient(
+        get_result={"language": "Python"},
+        open_issues_result=[
+            {"title": "real issue 1"},
+            {"title": "real issue 2"},
+            {"title": "a PR", "pull_request": {"url": "..."}},
+        ],
+        closed_issues_result=[],
+    )
+
+    results, skipped = validate_candidates(candidates, sample_size=5, client=client)
+
+    assert results[0].open_issues_rest == 2
     assert results[0].issues_match is True
 
 

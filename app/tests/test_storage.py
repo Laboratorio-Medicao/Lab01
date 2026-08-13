@@ -76,6 +76,28 @@ def test_upsert_repositories_updates_existing_row_in_place(db_connection):
 
 
 @requires_supabase
+def test_upsert_repositories_refreshes_collected_at_on_conflict(db_connection):
+    storage.init_db(db_connection)
+    storage.upsert_repositories(db_connection, [sample_repository()])
+
+    with db_connection.cursor() as cursor:
+        cursor.execute(
+            f"UPDATE {storage.REPOSITORIES_TABLE} SET collected_at = '2020-01-01 00:00:00' "
+            "WHERE id = 'R_1'"
+        )
+    db_connection.commit()
+
+    storage.upsert_repositories(db_connection, [sample_repository(stargazer_count=200)])
+
+    with db_connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT collected_at FROM {storage.REPOSITORIES_TABLE} WHERE id = 'R_1'"
+        )
+        collected_at = cursor.fetchone()[0]
+    assert collected_at != "2020-01-01 00:00:00"
+
+
+@requires_supabase
 def test_upsert_repositories_handles_multiple_distinct_rows(db_connection):
     storage.init_db(db_connection)
 
