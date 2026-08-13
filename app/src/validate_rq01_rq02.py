@@ -1,13 +1,12 @@
 import argparse
-from datetime import datetime, timezone
 from pathlib import Path
 
 from src import storage
 from src.config import get_github_token
+from src.metrics import compute_age_years
 from src.rest_client import RestClient, RestNotFoundError, RestRequestError
 from src.storage import get_connection
 
-DAYS_PER_YEAR = 365.25
 DEFAULT_SAMPLE_SIZE = 8
 CANDIDATE_POOL_MULTIPLIER = 3
 MIN_SAMPLE_SIZE = 5
@@ -16,17 +15,6 @@ OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validaca
 
 class InsufficientSampleError(RuntimeError):
     pass
-
-
-def _parse_iso8601(value):
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-def compute_age_years(created_at, collected_at):
-    created = _parse_iso8601(created_at)
-    collected = datetime.strptime(collected_at, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    age_days = (collected - created).total_seconds() / 86400
-    return round(age_days / DAYS_PER_YEAR, 1)
 
 
 def fetch_candidate_pool(connection, pool_size):

@@ -3,7 +3,7 @@
 | LAB01 | Laboratório 01 - 15 pontos |
 |---|---|
 
-### INFORMAÇÕES DOCENTE
+### INFORMAÇÕES DOCENTE     
 
 | CURSO: ENGENHARIA DE SOFTWARE | DISCIPLINA: LABORATÓRIO DE EXPERIMENTAÇÃO DE SOFTWARE | TURNO: NOITE | PERÍODO/SALA: 6º |
 |---|---|---|---|
@@ -37,7 +37,7 @@ Métrica: linguagem primária de cada repositório
 **RQ 06.** Sistemas populares possuem um alto percentual de issues fechadas?
 Métrica: razão entre issues fechadas e total de issues
 
-**Bônus (+1 ponto) — RQ 07:** Sistemas escritos em linguagens mais populares recebem mais contribuição externa, lançam mais releases e são atualizados com mais frequência? (divida os resultados das RQs 02, 03 e 04 por linguagem)
+**RQ 07:** Sistemas escritos em linguagens mais populares recebem mais contribuição externa, lançam mais releases e são atualizados com mais frequência? (divida os resultados das RQs 02, 03 e 04 por linguagem)
 
 ### Parte 2 — Setup do GitHub Projects do grupo
 
@@ -67,7 +67,7 @@ Link do repositório/GitHub Projects: `<preencher>`
 
 *Divisão sugerida por integrante:* a paginação em si (tarefa mecânica) pode ficar com qualquer integrante, mas cada integrante deve validar individualmente, para a sua parte de RQs, a consistência dos dados nos 1000 repositórios (distribuição, outliers, valores ausentes) e escrever, em Issue própria, a hipótese informal correspondente.
 
-**Lab01S03** (4 pontos): Análise e visualização de dados para as 6 RQs (+ bônus).
+**Lab01S03** (4 pontos): Análise e visualização de dados para as 7 RQs.
 
 **Relatório Final** (3 pontos): elaboração do documento final (ver seção "Relatório Final" acima), incluindo o anexo com print do board mostrando o fluxo completo do Lab01 e a política de WIP em uso.
 

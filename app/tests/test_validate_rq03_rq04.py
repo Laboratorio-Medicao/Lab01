@@ -70,6 +70,27 @@ def test_fetch_candidate_pool_orders_by_releases_then_pushed_at(db_connection):
     ]
 
 
+@requires_supabase
+def test_fetch_candidate_pool_mixes_zero_and_non_zero_releases(db_connection):
+    storage.init_db(db_connection)
+    storage.upsert_repositories(
+        db_connection,
+        [
+            repository_row("R_1", releases_count=0, pushed_at="2024-01-01T00:00:00Z"),
+            repository_row("R_2", releases_count=0, pushed_at="2024-01-02T00:00:00Z"),
+            repository_row("R_3", releases_count=3, pushed_at="2024-01-03T00:00:00Z"),
+            repository_row("R_4", releases_count=7, pushed_at="2024-01-04T00:00:00Z"),
+        ],
+    )
+
+    pool = fetch_candidate_pool(db_connection, pool_size=4)
+
+    releases_in_pool = [repo["releases_count"] for repo in pool]
+    assert 0 in releases_in_pool
+    assert any(count > 0 for count in releases_in_pool)
+    assert pool[0]["releases_count"] > 0
+
+
 def test_fetch_rest_releases_count_counts_all_pages():
     client = FakeRestClient(get_all_pages_result=[{"id": 1}, {"id": 2}, {"id": 3}])
 

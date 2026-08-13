@@ -1,6 +1,7 @@
 import pytest
 
 from src import storage
+from src.metrics import compute_closed_issues_ratio
 from src.validate_rq05_rq06 import (
     InsufficientSampleError,
     RestNotFoundError,
@@ -152,6 +153,24 @@ def test_validate_candidates_normalizes_null_language():
 
     assert results[0].zero_issues is True
     assert results[0].language_matches is True
+    assert results[0].closed_issues_ratio_query is None
+    assert results[0].closed_issues_ratio_rest is None
+
+
+def test_validate_candidates_computes_closed_issues_ratio_for_query_and_rest():
+    candidates = [
+        {"owner": "octocat", "name": "example", "primary_language": "Python", "open_issues": 1, "closed_issues": 5},
+    ]
+    client = FakeRestClient(
+        get_result={"language": "Python"},
+        open_issues_result=[{"title": f"open issue {i}"} for i in range(2)],
+        closed_issues_result=[{"title": f"closed issue {i}"} for i in range(6)],
+    )
+
+    results, skipped = validate_candidates(candidates, sample_size=5, client=client)
+
+    assert results[0].closed_issues_ratio_query == compute_closed_issues_ratio(1, 5)
+    assert results[0].closed_issues_ratio_rest == compute_closed_issues_ratio(2, 6)
 
 
 def test_validate_candidates_excludes_pull_requests_from_closed_issues_count():

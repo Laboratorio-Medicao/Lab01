@@ -231,6 +231,22 @@ igualdade de contagem inteira para `releases_count`. Repositórios com `404`
 na REST API são pulados e a amostra continua com os próximos candidatos, no
 mesmo padrão dos validadores de RQ01/RQ02 e RQ05/RQ06.
 
+**Amostragem cobre releases_count = 0 e > 0 (correção da auditoria de S01):**
+`fetch_candidate_pool` busca separadamente um pool de repositórios com
+`releases_count = 0` e outro com `releases_count > 0`, e intercala os dois
+antes de aplicar `--sample-size`. Antes dessa correção, a consulta ordenava
+tudo por `releases_count ASC`, então a amostra de 8 acabava sendo **100%
+repositórios com 0 releases** — o que nunca provava que a contagem bate para
+um valor diferente de zero. Ver `docs/validacao-rq03-rq04.md` para a tabela
+atual, que já mistura os dois casos.
+
+**Nota sobre divergências esperadas em `pushed_at`:** como a validação roda
+em um momento posterior à coleta, é normal que `pushed_at` divirja da REST
+API para repositórios ativos — o repositório pode ter recebido push entre a
+coleta e a validação. Isso não é um erro de coleta; é o mesmo fenômeno de
+defasagem temporal já documentado para `openIssues`/`closedIssues` na seção
+de RQ05/RQ06 abaixo.
+
 **Motivo metodológico:** essa validação fecha a base empírica da RQ07, que
 agrega RQ02/RQ03/RQ04 por linguagem. Sem validar RQ03 e RQ04 isoladamente,
 qualquer conclusão sobre diferenças por linguagem ficaria apoiada em campos

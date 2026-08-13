@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from itertools import zip_longest
 from pathlib import Path
 
 from src import storage
@@ -40,12 +41,33 @@ def fetch_candidate_pool(connection, pool_size):
             f"""
             SELECT owner, name, releases_count, pushed_at
             FROM {storage.REPOSITORIES_TABLE}
+            WHERE releases_count = 0
+            ORDER BY pushed_at ASC
+            LIMIT %s
+            """,
+            (pool_size,),
+        )
+        zero_releases_rows = cursor.fetchall()
+
+        cursor.execute(
+            f"""
+            SELECT owner, name, releases_count, pushed_at
+            FROM {storage.REPOSITORIES_TABLE}
+            WHERE releases_count > 0
             ORDER BY releases_count ASC, pushed_at ASC
             LIMIT %s
             """,
-            (pool_size,)
+            (pool_size,),
         )
-        rows = cursor.fetchall()
+        non_zero_releases_rows = cursor.fetchall()
+
+    interleaved_rows = [
+        row
+        for pair in zip_longest(non_zero_releases_rows, zero_releases_rows)
+        for row in pair
+        if row is not None
+    ]
+
     return [
         {
             "owner": owner,
@@ -53,7 +75,7 @@ def fetch_candidate_pool(connection, pool_size):
             "releases_count": releases_count,
             "pushed_at": pushed_at,
         }
-        for owner, name, releases_count, pushed_at in rows
+        for owner, name, releases_count, pushed_at in interleaved_rows[:pool_size]
     ]
 
 

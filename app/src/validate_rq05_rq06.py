@@ -6,6 +6,7 @@ from pathlib import Path
 
 from src import storage
 from src.config import get_github_token
+from src.metrics import compute_closed_issues_ratio
 from src.rest_client import RestClient, RestNotFoundError
 from src.storage import get_connection
 
@@ -27,6 +28,8 @@ class ValidationResult:
     zero_issues: bool
     language_matches: bool
     issues_match: bool
+    closed_issues_ratio_query: float | None = None
+    closed_issues_ratio_rest: float | None = None
 
     @property
     def matches(self):
@@ -130,6 +133,10 @@ def validate_candidates(candidates, sample_size, client):
             zero_issues=zero_issues,
             language_matches=lang_query == lang_rest,
             issues_match=open_issues_matches and closed_issues_matches,
+            closed_issues_ratio_query=compute_closed_issues_ratio(
+                repo["open_issues"], repo["closed_issues"]
+            ),
+            closed_issues_ratio_rest=compute_closed_issues_ratio(rest_open, rest_closed),
         ))
 
     return results, skipped
@@ -154,8 +161,9 @@ def render_markdown_table(results):
         "| `primaryLanguage` (query) | `language` (REST) "
         "| `openIssues` (query) | issues abertas (REST) "
         "| `closedIssues` (query) | issues fechadas (REST) "
+        "| Razão fechadas/total (query) | Razão fechadas/total (REST) "
         "| Zero issues? | Linguagem bate? | Issues batem? |\n"
-        "|---|---|---|---|---|---|---|---|---|---|\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
     )
     rows = []
     for r in results:
@@ -167,6 +175,7 @@ def render_markdown_table(results):
             f"| {_fmt(r.language_query)} | {_fmt(r.language_rest)} "
             f"| {r.open_issues_query} | {r.open_issues_rest} "
             f"| {r.closed_issues_query} | {r.closed_issues_rest} "
+            f"| {_fmt(r.closed_issues_ratio_query)} | {_fmt(r.closed_issues_ratio_rest)} "
             f"| {zero_flag} | {lang_check} | {issues_check} |"
         )
     return header + "\n".join(rows) + "\n"
