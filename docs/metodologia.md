@@ -68,6 +68,22 @@ idade_em_anos = (collected_at - created_at) / 365.25 dias
 - **Arredondamento:** exibição com 1 casa decimal; o valor bruto em dias fica
   disponível via `created_at`/`collected_at` para recomputar com outra
   precisão nas análises de S03, se necessário.
+- **`collected_at` é atualizado a cada UPSERT, não só na primeira coleta
+  (desde o commit `df34ff1`, issue #55):** antes, o campo ficava congelado no
+  valor da primeira vez em que a linha era inserida; agora, toda vez que um
+  repositório já existente é reprocessado (`ON CONFLICT DO UPDATE` em
+  `storage.py`), `collected_at` é regravado com o timestamp atual. Isso
+  corrige um bug (o campo nunca refletia recoletas), mas também significa que
+  a "referência de hoje" de um repositório pode avançar entre S01 e S02 caso
+  ele seja upsertado de novo — por exemplo se a página em que ele aparece for
+  reprocessada, ou se a ordenação por estrelas do `search` do GitHub mudar
+  no meio da paginação e o mesmo repositório aparecer em outro lote (risco já
+  registrado na auditoria técnica de S01). Nesse caso a idade calculada para
+  aquele repositório reflete o momento da recoleta, não da coleta original —
+  `created_at` não muda, só a referência de "hoje" usada no cálculo. Não
+  filtramos nem sinalizamos esses casos automaticamente; se a distribuição de
+  idade parecer inconsistente entre S01 e S02 para um mesmo repositório, essa
+  é a explicação mais provável a checar antes de suspeitar de erro de coleta.
 
 ## Risco de dados: repositórios jovens com alto número de estrelas
 
@@ -227,6 +243,16 @@ sem conferência cruzada própria.
 transformação, então a comparação é direta (igualdade de string ou `null`
 dos dois lados).
 
+**Fonte de referência para "linguagens mais populares" (exigida pelo
+enunciado da RQ05):** **GitHub Octoverse** (octoverse.github.com), a mesma
+citada no `README.md`. É a fonte usada, e mantida, em todo o laboratório
+para responder "os sistemas populares estão nas linguagens mais populares?"
+— ou seja, a linguagem primária de cada repositório coletado (`RQ05`) é
+comparada contra o ranking de linguagens do Octoverse, não contra um ranking
+derivado da própria amostra. Essa distinção importa em especial para a RQ07
+(ver seção abaixo), que usa uma métrica de popularidade diferente por
+motivos práticos.
+
 **Campo fonte de RQ06:** `issues(states: OPEN) { totalCount }` e
 `issues(states: CLOSED) { totalCount }` (GraphQL).
 
@@ -255,3 +281,36 @@ divergência só é motivo de investigação se a **soma** (`open + closed`)
 também mudar de forma inconsistente com "algumas issues fechadas entre a
 coleta e a validação" (nesse caso o total se mantém constante, só migra de
 aberta para fechada).
+
+## RQ07 (bônus) — Linguagem vs. contribuição, releases e atualização
+
+**Implementação:** `app/analysis/analyze_rq07.py`, gera
+`docs/analise-rq07.md`. Agrupa os repositórios por `primary_language`,
+calcula a mediana de PRs mergeadas (RQ02), releases (RQ03) e dias desde o
+último push (RQ04) por linguagem, e mede a correlação de Spearman entre um
+ranking de popularidade de linguagem e cada uma dessas três medianas.
+
+**Métrica de popularidade usada aqui é diferente da fonte da RQ05, por
+necessidade prática:** a RQ07 ranqueia as linguagens pelo **número de
+repositórios da própria amostra coletada** que as usam como `primary_language`
+(`repo_count`), e não pela posição da linguagem no ranking do GitHub
+Octoverse (a fonte externa adotada para a RQ05 — ver seção acima). Motivo:
+o Octoverse publica um ranking ordinal de linguagens, não um valor numérico
+por linguagem que sirva de variável contínua para correlacionar com as
+medianas de PRs/releases/atualização — usar só a posição no ranking (1º,
+2º, 3º...) como proxy funcionaria de forma parecida, mas a contagem de
+repositórios na amostra tem a vantagem adicional de já vir calculada dos
+mesmos dados coletados, sem depender de mapear manualmente cada linguagem da
+amostra para uma posição no Octoverse.
+
+**Limitação que isso introduz:** "número de repositórios na amostra" mede
+popularidade **dentro do universo já filtrado de repositórios populares**,
+não popularidade da linguagem no ecossistema em geral — são conceitos
+relacionados, mas não idênticos, e podem divergir do ranking do Octoverse
+(ex.: uma linguagem pode ser muito usada em repositórios de alto destaque no
+GitHub sem estar entre as mais populares do Octoverse, ou vice-versa). Por
+isso o texto gerado em `docs/analise-rq07.md` chama a métrica explicitamente
+de "proxy de popularidade", e o Relatório Final deve deixar claro, ao
+apresentar a RQ07, que a definição de "popular" usada ali não é a mesma
+fonte externa citada na RQ05 — para não parecer inconsistência não
+intencional entre as duas seções do relatório.

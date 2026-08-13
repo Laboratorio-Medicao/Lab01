@@ -122,17 +122,28 @@ python -m src.validate_rq05_rq06 --sample-size 8
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export
 
-# Análise por RQ
-python analysis/rq01_02.py
-python analysis/rq03_04.py
-python analysis/rq05_06_07.py
+# Análise por RQ01/RQ02 e RQ03/RQ04 — AINDA NÃO IMPLEMENTADO
+# (analysis/rq01_02.py e analysis/rq03_04.py não existem neste repositório ainda;
+# planejados para S03, junto com o restante da análise estatística/visualizações)
+# python analysis/rq01_02.py
+# python analysis/rq03_04.py
 
-# Dashboard interativo
-python dashboard/generate.py
-# → abre output/dashboard.html
+# Análise RQ07 (bônus) — implementado; roda como módulo, não como script solto
+# (rodar "python analysis/analyze_rq07.py" direto falha com
+# ModuleNotFoundError: No module named 'src', pois o diretório do script não
+# tem app/ no sys.path — use -m a partir de app/)
+# gera docs/analise-rq07.md
+python -m analysis.analyze_rq07
 
-# Export snapshot do Kanban (rodar ao final de cada sprint)
-python kanban/export_kanban.py
+# Dashboard interativo — AINDA NÃO IMPLEMENTADO
+# (dashboard/generate.py não existe neste repositório ainda; planejado para S03)
+# python dashboard/generate.py
+# → abriria output/dashboard.html
+
+# Export snapshot do Kanban — AINDA NÃO IMPLEMENTADO
+# (kanban/export_kanban.py não existe neste repositório ainda; planejado para
+# uma sprint futura — ver pendência registrada em docs/sprint-01.md)
+# python kanban/export_kanban.py
 ```
 
 ---
