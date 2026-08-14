@@ -140,10 +140,13 @@ python -m analysis.analyze_rq07
 # python dashboard/generate.py
 # → abriria output/dashboard.html
 
-# Export snapshot do Kanban — AINDA NÃO IMPLEMENTADO
-# (kanban/export_kanban.py não existe neste repositório ainda; planejado para
-# uma sprint futura — ver pendência registrada em docs/sprint-01.md)
-# python kanban/export_kanban.py
+# Snapshot do Kanban (grava kanban/snapshots/kanban-snapshot-YYYY-MM-DD.csv)
+# Requer GITHUB_TOKEN com acesso à organização Laboratorio-Medicao.
+# Nota: tokens fine-grained com prazo > 366 dias são bloqueados pela org —
+# gere um token com prazo menor ou use um token clássico (classic PAT).
+python -m kanban.snapshot
+# opções:
+python -m kanban.snapshot --org Laboratorio-Medicao --project 1
 ```
 
 ---
