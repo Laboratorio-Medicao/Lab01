@@ -8,8 +8,7 @@ from src.storage import (
     get_collection_state,
     get_connection,
     init_db,
-    save_collection_state,
-    upsert_repositories,
+    upsert_page_and_advance_cursor,
 )
 from src.client import GitHubGraphQLClient, GraphQLRequestError
 from src.query import (
@@ -67,11 +66,10 @@ def collect_page(client, connection, per_page):
     search = data["search"]
     repository_nodes = [node for node in search["nodes"] if node is not None]
     repositories = [parse_repository_node(node) for node in repository_nodes]
-    upsert_repositories(connection, repositories)
 
     new_cursor = search["pageInfo"]["endCursor"]
     total_collected = state["total_collected"] + len(repositories)
-    save_collection_state(connection, new_cursor, total_collected)
+    upsert_page_and_advance_cursor(connection, repositories, new_cursor, total_collected)
 
     logger.info(
         "página coletada: %s repos (total acumulado=%s, hasNextPage=%s, repositoryCount=%s)",

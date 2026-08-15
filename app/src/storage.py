@@ -1,9 +1,27 @@
 import psycopg2
+from psycopg2.extras import execute_values
 
 from src.config import get_supabase_connection_params
 
 REPOSITORIES_TABLE = "repositories"
 COLLECTION_STATE_TABLE = "collection_state"
+
+_REPOSITORY_COLUMNS = (
+    "id",
+    "name",
+    "owner",
+    "stargazer_count",
+    "created_at",
+    "pushed_at",
+    "is_fork",
+    "is_archived",
+    "primary_language",
+    "merged_pull_requests",
+    "releases_count",
+    "open_issues",
+    "closed_issues",
+    "raw_json",
+)
 
 
 def get_connection(connection_params=None):
@@ -63,53 +81,69 @@ def get_collection_state(connection):
     return {"cursor": cursor_value, "total_collected": total_collected}
 
 
+def _save_collection_state_row(cursor, collection_cursor, total_collected):
+    cursor.execute(
+        f"""
+        UPDATE {COLLECTION_STATE_TABLE}
+        SET cursor = %(cursor)s,
+            total_collected = %(total_collected)s,
+            updated_at = to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD HH24:MI:SS')
+        WHERE id = 1
+        """,
+        {"cursor": collection_cursor, "total_collected": total_collected},
+    )
+
+
 def save_collection_state(connection, cursor, total_collected):
     with connection.cursor() as db_cursor:
-        db_cursor.execute(
-            f"""
-            UPDATE {COLLECTION_STATE_TABLE}
-            SET cursor = %(cursor)s,
-                total_collected = %(total_collected)s,
-                updated_at = to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD HH24:MI:SS')
-            WHERE id = 1
-            """,
-            {"cursor": cursor, "total_collected": total_collected},
-        )
+        _save_collection_state_row(db_cursor, cursor, total_collected)
     connection.commit()
+
+
+def _upsert_repositories_rows(cursor, repos):
+    if not repos:
+        return
+    values = [tuple(repo[column] for column in _REPOSITORY_COLUMNS) for repo in repos]
+    execute_values(
+        cursor,
+        f"""
+        INSERT INTO {REPOSITORIES_TABLE} (
+            id, name, owner, stargazer_count, created_at, pushed_at,
+            is_fork, is_archived, primary_language, merged_pull_requests,
+            releases_count, open_issues, closed_issues, raw_json
+        ) VALUES %s
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            owner = EXCLUDED.owner,
+            stargazer_count = EXCLUDED.stargazer_count,
+            created_at = EXCLUDED.created_at,
+            pushed_at = EXCLUDED.pushed_at,
+            is_fork = EXCLUDED.is_fork,
+            is_archived = EXCLUDED.is_archived,
+            primary_language = EXCLUDED.primary_language,
+            merged_pull_requests = EXCLUDED.merged_pull_requests,
+            releases_count = EXCLUDED.releases_count,
+            open_issues = EXCLUDED.open_issues,
+            closed_issues = EXCLUDED.closed_issues,
+            raw_json = EXCLUDED.raw_json,
+            collected_at = to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD HH24:MI:SS')
+        """,
+        values,
+        page_size=len(values),
+    )
 
 
 def upsert_repositories(connection, repos):
     with connection.cursor() as cursor:
-        cursor.executemany(
-            f"""
-            INSERT INTO {REPOSITORIES_TABLE} (
-                id, name, owner, stargazer_count, created_at, pushed_at,
-                is_fork, is_archived, primary_language, merged_pull_requests,
-                releases_count, open_issues, closed_issues, raw_json
-            ) VALUES (
-                %(id)s, %(name)s, %(owner)s, %(stargazer_count)s, %(created_at)s, %(pushed_at)s,
-                %(is_fork)s, %(is_archived)s, %(primary_language)s, %(merged_pull_requests)s,
-                %(releases_count)s, %(open_issues)s, %(closed_issues)s, %(raw_json)s
-            )
-            ON CONFLICT (id) DO UPDATE SET
-                name = EXCLUDED.name,
-                owner = EXCLUDED.owner,
-                stargazer_count = EXCLUDED.stargazer_count,
-                created_at = EXCLUDED.created_at,
-                pushed_at = EXCLUDED.pushed_at,
-                is_fork = EXCLUDED.is_fork,
-                is_archived = EXCLUDED.is_archived,
-                primary_language = EXCLUDED.primary_language,
-                merged_pull_requests = EXCLUDED.merged_pull_requests,
-                releases_count = EXCLUDED.releases_count,
-                open_issues = EXCLUDED.open_issues,
-                closed_issues = EXCLUDED.closed_issues,
-                raw_json = EXCLUDED.raw_json,
-                collected_at = to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD HH24:MI:SS')
-            """,
-            repos,
-        )
+        _upsert_repositories_rows(cursor, repos)
     connection.commit()
+
+
+def upsert_page_and_advance_cursor(connection, repos, cursor, total_collected):
+    with connection:
+        with connection.cursor() as db_cursor:
+            _upsert_repositories_rows(db_cursor, repos)
+            _save_collection_state_row(db_cursor, cursor, total_collected)
 
 
 def count_repositories(connection):
