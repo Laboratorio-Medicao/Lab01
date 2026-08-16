@@ -119,6 +119,10 @@ python -m src.validate_rq03_rq04 --sample-size 8
 # gera docs/validacao-rq05-rq06.md
 python -m src.validate_rq05_rq06 --sample-size 8
 
+# Validação cruzada RQ08 (bônus) — fork_count contra a API REST do GitHub
+# gera docs/validacao-rq08.md — decisão metodológica em docs/metodologia.md
+python -m src.validate_rq08 --sample-size 8
+
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export
 

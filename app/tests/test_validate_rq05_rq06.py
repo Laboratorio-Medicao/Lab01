@@ -45,6 +45,7 @@ def repository_row(repository_id, owner, name, primary_language, open_issues, cl
         "name": name,
         "owner": owner,
         "stargazer_count": 100,
+        "fork_count": 10,
         "created_at": "2020-01-01T00:00:00Z",
         "pushed_at": "2024-01-01T00:00:00Z",
         "is_fork": 0,

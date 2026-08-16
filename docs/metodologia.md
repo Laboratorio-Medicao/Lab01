@@ -138,6 +138,11 @@ não um problema na coleta. Vale considerar, em S03, uma análise de
 sensibilidade (mediana com e sem outliers de idade) para não deixar esse
 efeito mascarado nos números agregados.
 
+**Teste objetivo proposto:** a seção "RQ08 (bônus) — Engajamento real: razão
+forks/estrelas", ao final deste documento, cruza `fork_count` com
+`stargazer_count` justamente para dar um número a este achado, em vez de
+depender só de inspeção manual de nomes de owner/padrões de crescimento.
+
 ## RQ02 — Pull requests aceitas
 
 **Campo fonte:** `mergedPullRequests: pullRequests(states: MERGED) { totalCount }`.
@@ -157,6 +162,12 @@ padrão — a busca (`TOP_STARRED_REPOSITORIES_SEARCH_QUERY`) continua sem
 `is_fork = 1` em **0** repositórios, então a decisão não teve impacto
 observável nesta sprint; o campo fica disponível para reportar/filtrar em S02
 (1.000 repos) e no Relatório Final caso forks apareçam em volume relevante.
+
+**Não confundir com `fork_count` (RQ08, seção ao final deste documento):**
+`is_fork`/`isFork` responde "este repositório É um fork de outro?" (booleano);
+`fork_count`/`forkCount` responde "quantas vezes ESTE repositório FOI
+forkado por outros?" (contagem). São campos independentes que só compartilham
+a palavra "fork".
 
 ## Repositórios arquivados
 
@@ -330,3 +341,68 @@ de "proxy de popularidade", e o Relatório Final deve deixar claro, ao
 apresentar a RQ07, que a definição de "popular" usada ali não é a mesma
 fonte externa citada na RQ05 — para não parecer inconsistência não
 intencional entre as duas seções do relatório.
+
+## RQ08 (bônus) — Engajamento real: razão forks/estrelas
+
+**Pergunta de pesquisa:** sistemas populares atraem apenas admiração passiva
+(estrelas) ou também engajamento ativo (forks — sinal de que alguém pretende
+usar, estudar ou contribuir com o código, não só marcar como favorito)?
+
+**Campo fonte:** `forkCount` (GraphQL, `Int!`, mesmo nó `Repository` já
+consultado para as demais RQs — nenhuma requisição extra, nenhum custo
+adicional de rate limit).
+
+**Métrica:**
+
+```
+fork_star_ratio = fork_count / stargazer_count
+```
+
+- **Arredondamento:** 4 casas decimais, mesmo padrão de `closed_issues_ratio`
+  (RQ06) — ambas são razões diretas entre duas contagens.
+- **Valor ausente:** `None` quando `stargazer_count = 0` (razão indefinida) ou
+  quando `fork_count` ainda não foi coletado para aquela linha (repositórios
+  já persistidos antes desta mudança de schema, até serem recoletados) — nunca
+  um erro. Ver `src.metrics.compute_fork_star_ratio`.
+- **Diferença importante em relação a `closed_issues_ratio`:** esta razão não
+  é limitada a `[0, 1]` — um repositório pode ter mais forks do que estrelas
+  (`fork_star_ratio > 1`), o que é, inclusive, um sinal forte de adoção
+  orgânica genuína.
+
+**Por que esta métrica, e por que agora:** ela não é uma das 7 RQs do
+enunciado — é uma métrica adicional que o grupo decidiu coletar por já ter o
+campo disponível de graça no mesmo nó GraphQL, para enriquecer a discussão já
+registrada na seção "Risco de dados: repositórios jovens com alto número de
+estrelas" (achado de star-farming em 16% da amostra de S01, RQ01). O próprio
+texto daquela seção já cita "forks" como um dos sinais de adoção orgânica que
+a comunidade do GitHub usa para diferenciar popularidade real de estrelas
+compradas — esta métrica transforma essa observação qualitativa em um número
+comparável entre repositórios.
+
+**Hipótese informal:** repositórios no grupo suspeito de star-farming (idade
+< 1,5 anos e > 100 mil estrelas) devem ter `fork_star_ratio` sistematicamente
+mais baixo que o resto da amostra — estrelas compradas/automatizadas não se
+traduzem em forks, enquanto adoção orgânica gera ambos proporcionalmente.
+Esta é uma expectativa a confrontar com os dados reais, não uma conclusão.
+
+**Validação cruzada (`app/src/validate_rq08.py`, evidência em
+`docs/validacao-rq08.md`):** segue o mesmo padrão dos demais validadores —
+`fork_count` (coletado via GraphQL) é conferido contra `forks_count` da REST
+API (`GET /repos/{owner}/{repo}`) para uma amostra de 8 repositórios,
+intercalando candidatos com `fork_count = 0` e `fork_count > 0` (mesma lógica
+de `fetch_candidate_pool` de RQ03/RQ04, já que `fork_count` também pode
+legitimamente ser zero). A tabela gerada também reporta `fork_star_ratio`
+como coluna informativa (calculado, não validado contra REST — mesmo
+precedente de `age_years` em RQ01/RQ02). Resultado da execução em
+2026-08-15: 8/8 bateram 100% — nenhum repositório com `fork_count = 0` entrou
+na amostra dessa execução (esperado: repositórios populares raramente têm
+zero forks).
+
+**Escopo desta entrega:** coleta do campo, cálculo e exportação da métrica no
+CSV (`app/data/repos.csv`, coluna `fork_star_ratio`), validação cruzada
+contra a REST API, com testes unitários e de integração cobrindo os casos
+normais e de borda. **A análise/visualização desta métrica sobre a amostra
+completa — cruzando com o achado de star-farming, nos mesmos moldes de
+`app/analysis/analyze_rq07.py` para a RQ07 — fica para S03**, seguindo a
+mesma separação de escopo por sprint já usada no restante do laboratório
+(S02 coleta e valida dados, S03 analisa e visualiza).

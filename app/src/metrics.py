@@ -44,3 +44,17 @@ def compute_closed_issues_ratio(open_issues, closed_issues):
     if total == 0:
         return None
     return round(closed_issues / total, 4)
+
+
+def compute_fork_star_ratio(fork_count, stargazer_count):
+    """RQ08 (bônus) — razão entre forks e estrelas, um proxy de engajamento ativo
+    (uso/contribuição) versus popularidade passiva (estrelas).
+
+    Retorna `None` quando `stargazer_count = 0` (razão indefinida) ou quando
+    `fork_count` é `None` (linha ainda não recoletada com o campo novo), em vez
+    de levantar erro — mesmo padrão de valor ausente explícito de
+    `compute_closed_issues_ratio` (fonte da verdade, RQ08).
+    """
+    if fork_count is None or stargazer_count == 0:
+        return None
+    return round(fork_count / stargazer_count, 4)

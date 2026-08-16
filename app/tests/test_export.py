@@ -5,6 +5,7 @@ from src.export import export_to_csv
 from src.metrics import (
     compute_age_years,
     compute_closed_issues_ratio,
+    compute_fork_star_ratio,
     compute_update_recency_years,
 )
 from tests.conftest import requires_supabase
@@ -16,6 +17,7 @@ def sample_repository(repository_id="R_1", stargazer_count=100):
         "name": "example",
         "owner": "octocat",
         "stargazer_count": stargazer_count,
+        "fork_count": 10,
         "created_at": "2020-01-01T00:00:00Z",
         "pushed_at": "2024-01-01T00:00:00Z",
         "is_fork": 0,
@@ -100,3 +102,22 @@ def test_export_to_csv_includes_computed_closed_issues_ratio(db_connection, tmp_
 
     assert rows["R_1"]["closed_issues_ratio"] == str(compute_closed_issues_ratio(1, 3))
     assert rows["R_2"]["closed_issues_ratio"] == ""
+
+
+@requires_supabase
+def test_export_to_csv_includes_computed_fork_star_ratio(db_connection, tmp_path):
+    storage.init_db(db_connection)
+    repo_with_forks = sample_repository("R_1", stargazer_count=100)
+    repo_with_forks["fork_count"] = 25
+    repo_without_stars = sample_repository("R_2", stargazer_count=0)
+    repo_without_stars["fork_count"] = 3
+    storage.upsert_repositories(db_connection, [repo_with_forks, repo_without_stars])
+    output_path = tmp_path / "repos.csv"
+
+    export_to_csv(db_connection, output_path=output_path)
+
+    with output_path.open(encoding="utf-8") as csv_file:
+        rows = {row["id"]: row for row in csv.DictReader(csv_file)}
+
+    assert rows["R_1"]["fork_star_ratio"] == str(compute_fork_star_ratio(25, 100))
+    assert rows["R_2"]["fork_star_ratio"] == ""

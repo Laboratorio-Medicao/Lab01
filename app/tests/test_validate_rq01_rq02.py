@@ -48,6 +48,7 @@ def repository_row(repository_id, merged_pull_requests):
         "name": "example",
         "owner": "octocat",
         "stargazer_count": 100,
+        "fork_count": 10,
         "created_at": "2020-01-01T00:00:00Z",
         "pushed_at": "2024-01-01T00:00:00Z",
         "is_fork": 0,

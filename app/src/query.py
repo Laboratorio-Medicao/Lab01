@@ -19,6 +19,7 @@ query RepositorySearch($searchQuery: String!, $perPage: Int!, $after: String) {
           login
         }
         stargazerCount
+        forkCount
         createdAt
         pushedAt
         isFork

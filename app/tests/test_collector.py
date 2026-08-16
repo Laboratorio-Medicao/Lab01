@@ -15,6 +15,7 @@ def repository_node(repository_id="R_1", language=None, is_fork=False, is_archiv
         "name": "example",
         "owner": {"login": "octocat"},
         "stargazerCount": 42,
+        "forkCount": 7,
         "createdAt": "2020-01-01T00:00:00Z",
         "pushedAt": "2024-01-01T00:00:00Z",
         "isFork": is_fork,
@@ -32,6 +33,7 @@ def test_parse_repository_node_maps_all_fields():
 
     assert parsed["id"] == "R_1"
     assert parsed["owner"] == "octocat"
+    assert parsed["fork_count"] == 7
     assert parsed["primary_language"] == "Python"
     assert parsed["merged_pull_requests"] == 3
     assert parsed["releases_count"] == 1

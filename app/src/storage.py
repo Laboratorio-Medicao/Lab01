@@ -11,6 +11,7 @@ _REPOSITORY_COLUMNS = (
     "name",
     "owner",
     "stargazer_count",
+    "fork_count",
     "created_at",
     "pushed_at",
     "is_fork",
@@ -39,6 +40,7 @@ def init_db(connection):
                 name TEXT NOT NULL,
                 owner TEXT NOT NULL,
                 stargazer_count INTEGER,
+                fork_count INTEGER,
                 created_at TEXT,
                 pushed_at TEXT,
                 is_fork INTEGER,
@@ -54,6 +56,9 @@ def init_db(connection):
                 )
             )
             """
+        )
+        cursor.execute(
+            f"ALTER TABLE {REPOSITORIES_TABLE} ADD COLUMN IF NOT EXISTS fork_count INTEGER"
         )
         cursor.execute(
             f"""
@@ -108,7 +113,7 @@ def _upsert_repositories_rows(cursor, repos):
         cursor,
         f"""
         INSERT INTO {REPOSITORIES_TABLE} (
-            id, name, owner, stargazer_count, created_at, pushed_at,
+            id, name, owner, stargazer_count, fork_count, created_at, pushed_at,
             is_fork, is_archived, primary_language, merged_pull_requests,
             releases_count, open_issues, closed_issues, raw_json
         ) VALUES %s
@@ -116,6 +121,7 @@ def _upsert_repositories_rows(cursor, repos):
             name = EXCLUDED.name,
             owner = EXCLUDED.owner,
             stargazer_count = EXCLUDED.stargazer_count,
+            fork_count = EXCLUDED.fork_count,
             created_at = EXCLUDED.created_at,
             pushed_at = EXCLUDED.pushed_at,
             is_fork = EXCLUDED.is_fork,
@@ -157,6 +163,7 @@ EXPORT_COLUMNS = [
     "name",
     "owner",
     "stargazer_count",
+    "fork_count",
     "created_at",
     "pushed_at",
     "is_fork",

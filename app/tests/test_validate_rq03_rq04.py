@@ -36,6 +36,7 @@ def repository_row(repository_id, releases_count, pushed_at):
         "name": "example",
         "owner": "octocat",
         "stargazer_count": 100,
+        "fork_count": 10,
         "created_at": "2020-01-01T00:00:00Z",
         "pushed_at": pushed_at,
         "is_fork": 0,

@@ -5,6 +5,7 @@ from pathlib import Path
 from src.metrics import (
     compute_age_years,
     compute_closed_issues_ratio,
+    compute_fork_star_ratio,
     compute_update_recency_years,
 )
 from src.storage import EXPORT_COLUMNS, get_connection, iter_repositories_for_export
@@ -13,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "data" / "repos.csv"
 
-COMPUTED_METRIC_COLUMNS = ["age_years", "update_recency_years", "closed_issues_ratio"]
+COMPUTED_METRIC_COLUMNS = [
+    "age_years",
+    "update_recency_years",
+    "closed_issues_ratio",
+    "fork_star_ratio",
+]
 EXPORT_FIELDNAMES = EXPORT_COLUMNS + COMPUTED_METRIC_COLUMNS
 
 
@@ -25,6 +31,9 @@ def _with_computed_metrics(row):
     )
     row["closed_issues_ratio"] = compute_closed_issues_ratio(
         row["open_issues"], row["closed_issues"]
+    )
+    row["fork_star_ratio"] = compute_fork_star_ratio(
+        row["fork_count"], row["stargazer_count"]
     )
     return row
 

@@ -32,6 +32,7 @@ def parse_repository_node(node):
         "name": node["name"],
         "owner": owner,
         "stargazer_count": node["stargazerCount"],
+        "fork_count": node["forkCount"],
         "created_at": node["createdAt"],
         "pushed_at": node["pushedAt"],
         "is_fork": int(node["isFork"]),
