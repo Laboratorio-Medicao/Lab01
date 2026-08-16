@@ -57,3 +57,23 @@ def get_supabase_connection_params():
 def supabase_env_configured():
     load_env_file()
     return all(os.environ.get(name, "").strip() for name in SUPABASE_ENV_VARS)
+
+
+RABBITMQ_ENV_VARS = ("RABBITMQ_HOST", "RABBITMQ_PORT", "RABBITMQ_USER", "RABBITMQ_PASS")
+
+
+def get_rabbitmq_connection_params():
+    load_env_file()
+    values = {name: os.environ.get(name, "").strip() for name in RABBITMQ_ENV_VARS}
+    missing = [name for name, value in values.items() if not value]
+    if missing:
+        raise RuntimeError(
+            f"variáveis do RabbitMQ ausentes: {', '.join(missing)}. "
+            "Defina no ambiente ou em .env (veja .env.example)."
+        )
+    return {
+        "host": values["RABBITMQ_HOST"],
+        "port": int(values["RABBITMQ_PORT"]),
+        "user": values["RABBITMQ_USER"],
+        "password": values["RABBITMQ_PASS"],
+    }

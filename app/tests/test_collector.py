@@ -257,3 +257,41 @@ def test_collect_total_reraises_retryable_error_once_at_min_batch_size(db_connec
             collect_total(client, db_connection, total=10, batch_size=25)
 
     assert client.calls == [10, 10, 6, 5]
+
+
+@requires_supabase
+def test_collect_total_sleeps_and_retries_when_rate_limit_reached(db_connection):
+    from src.errors import RateLimitReached
+
+    storage.init_db(db_connection)
+
+    class RateLimitedOnceClient:
+        def __init__(self):
+            self.calls = 0
+
+        def execute(self, query, variables):
+            self.calls += 1
+            if self.calls == 1:
+                raise RateLimitReached(reset_at="2000-01-01T00:00:00Z", remaining=0)
+            per_page = variables["perPage"]
+            after = variables["after"]
+            start = int(after) if after else 0
+            end = start + per_page
+            nodes = [repository_node(f"R_{i}") for i in range(start, end)]
+            return {
+                "search": {
+                    "repositoryCount": 100,
+                    "pageInfo": {"hasNextPage": True, "endCursor": str(end)},
+                    "nodes": nodes,
+                }
+            }
+
+    client = RateLimitedOnceClient()
+    sleep_calls = []
+
+    with patch("src.collector.time.sleep", side_effect=lambda s: sleep_calls.append(s)):
+        total_collected = collect_total(client, db_connection, total=5, batch_size=5)
+
+    assert total_collected == 5
+    assert len(sleep_calls) == 1
+    assert sleep_calls[0] >= 0

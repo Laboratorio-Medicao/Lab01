@@ -3,3 +3,4 @@
 # pacote de terceiros é o driver de banco, para conectar no Postgres (Supabase)
 # compartilhado pelo time.
 psycopg2-binary
+pika>=1.3,<2

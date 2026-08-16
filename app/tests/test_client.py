@@ -112,7 +112,9 @@ def test_execute_raises_on_missing_data_field(monkeypatch):
         client.execute("query { }")
 
 
-def test_execute_sleeps_until_reset_when_rate_limit_low(monkeypatch):
+def test_execute_raises_rate_limit_reached_when_rate_limit_low(monkeypatch):
+    from src.errors import RateLimitReached
+
     reset_at = (datetime.now(timezone.utc) + timedelta(seconds=30)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )
@@ -123,29 +125,26 @@ def test_execute_sleeps_until_reset_when_rate_limit_low(monkeypatch):
         "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
-    sleep_calls = []
-    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", rate_limit_threshold=100)
-    client.execute("query { }")
+    with pytest.raises(RateLimitReached) as excinfo:
+        client.execute("query { }")
 
-    assert len(sleep_calls) == 1
-    assert sleep_calls[0] > 0
+    assert excinfo.value.remaining == 1
+    assert "2" in excinfo.value.reset_at
 
 
-def test_execute_does_not_sleep_when_rate_limit_healthy(monkeypatch):
+def test_execute_does_not_raise_when_rate_limit_healthy(monkeypatch):
     payload = {"data": {"rateLimit": rate_limit_payload(remaining=4999), "search": {}}}
     monkeypatch.setattr(
         "src.client.urllib.request.urlopen",
         lambda request, timeout: FakeResponse(payload),
     )
-    sleep_calls = []
-    monkeypatch.setattr("src.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
 
     client = GitHubGraphQLClient(token="fake-token", rate_limit_threshold=100)
-    client.execute("query { }")
+    data = client.execute("query { }")
 
-    assert sleep_calls == []
+    assert data is not None
 
 
 def test_execute_retries_on_server_error_then_succeeds(monkeypatch):

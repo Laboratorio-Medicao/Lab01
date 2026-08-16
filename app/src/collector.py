@@ -12,6 +12,7 @@ from src.storage import (
     upsert_repositories,
 )
 from src.client import GitHubGraphQLClient, GraphQLRequestError
+from src.errors import RateLimitReached
 from src.query import (
     MAX_GITHUB_SEARCH_PAGE_SIZE,
     REPOSITORY_SEARCH_QUERY,
@@ -93,6 +94,15 @@ def collect_total(client, connection, total, batch_size):
         page_size = min(current_batch_size, total - total_collected)
         try:
             repositories = collect_page(client, connection, page_size)
+        except RateLimitReached as error:
+            sleep_seconds = error.seconds_until_reset()
+            logger.warning(
+                "rate limit atingido; dormindo %.0fs até %s",
+                sleep_seconds,
+                error.reset_at,
+            )
+            time.sleep(sleep_seconds)
+            continue
         except GraphQLRequestError as error:
             if not error.retryable or current_batch_size <= MIN_BATCH_SIZE:
                 raise
