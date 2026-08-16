@@ -1,10 +1,9 @@
 import json
 import logging
-import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
 
+from src.errors import RateLimitReached
 from src.http_retry import (
     RetryableTransportError,
     call_with_retry,
@@ -138,16 +137,10 @@ class GitHubGraphQLClient:
         if remaining > self._rate_limit_threshold:
             return
 
-        reset_at_datetime = datetime.fromisoformat(reset_at.replace("Z", "+00:00"))
-        sleep_seconds = (reset_at_datetime - datetime.now(timezone.utc)).total_seconds()
-        if sleep_seconds <= 0:
-            return
-
         logger.warning(
-            "rate limit baixo (remaining=%s <= threshold=%s); dormindo %.0fs até %s",
+            "rate limit baixo (remaining=%s <= threshold=%s); resetAt=%s",
             remaining,
             self._rate_limit_threshold,
-            sleep_seconds,
             reset_at,
         )
-        time.sleep(sleep_seconds + 5)
+        raise RateLimitReached(reset_at=reset_at, remaining=remaining)
