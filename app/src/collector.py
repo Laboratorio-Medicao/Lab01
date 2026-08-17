@@ -5,6 +5,7 @@ import time
 
 from src.config import get_github_token
 from src.storage import (
+    get_repository_integrity_stats,
     get_collection_state,
     get_connection,
     init_db,
@@ -70,8 +71,8 @@ def collect_page(client, connection, per_page):
     repositories = [parse_repository_node(node) for node in repository_nodes]
 
     new_cursor = search["pageInfo"]["endCursor"]
-    total_collected = state["total_collected"] + len(repositories)
-    upsert_page_and_advance_cursor(connection, repositories, new_cursor, total_collected)
+    upsert_page_and_advance_cursor(connection, repositories, new_cursor)
+    total_collected = get_collection_state(connection)["total_collected"]
 
     logger.info(
         "página coletada: %s repos (total acumulado=%s, hasNextPage=%s, repositoryCount=%s)",
@@ -81,6 +82,23 @@ def collect_page(client, connection, per_page):
         search["repositoryCount"],
     )
     return repositories
+
+
+def validate_collection_target(connection, expected_total):
+    stats = get_repository_integrity_stats(connection)
+    total_rows = stats["total_rows"]
+    distinct_ids = stats["distinct_ids"]
+    if total_rows != expected_total or distinct_ids != expected_total:
+        raise RuntimeError(
+            "validação final da coleta falhou: "
+            f"esperado={expected_total}, total_rows={total_rows}, distinct_ids={distinct_ids}"
+        )
+    logger.info(
+        "validação final OK: esperado=%s total_rows=%s distinct_ids=%s",
+        expected_total,
+        total_rows,
+        distinct_ids,
+    )
 
 
 def collect_total(client, connection, total, batch_size):
@@ -180,6 +198,7 @@ def main():
             logger.info(
                 "coleta finalizada: total_collected=%s (meta=%s)", total_collected, args.total
             )
+            validate_collection_target(connection, args.total)
         else:
             repositories = collect_page(client, connection, args.per_page)
             for repository in repositories:

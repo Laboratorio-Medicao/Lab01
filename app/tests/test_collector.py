@@ -5,7 +5,12 @@ import pytest
 
 from src import storage
 from src.client import GraphQLRequestError
-from src.collector import collect_page, collect_total, parse_repository_node
+from src.collector import (
+    collect_page,
+    collect_total,
+    parse_repository_node,
+    validate_collection_target,
+)
 from tests.conftest import requires_supabase
 
 
@@ -297,3 +302,33 @@ def test_collect_total_sleeps_and_retries_when_rate_limit_reached(db_connection)
     assert total_collected == 5
     assert len(sleep_calls) == 1
     assert sleep_calls[0] >= 0
+
+
+@requires_supabase
+def test_validate_collection_target_passes_for_exact_total_without_duplicates(db_connection):
+    storage.init_db(db_connection)
+    storage.upsert_repositories(
+        db_connection,
+        [
+            parse_repository_node(repository_node("R_1")),
+            parse_repository_node(repository_node("R_2")),
+            parse_repository_node(repository_node("R_3")),
+        ],
+    )
+
+    validate_collection_target(db_connection, expected_total=3)
+
+
+@requires_supabase
+def test_validate_collection_target_raises_when_total_is_not_expected(db_connection):
+    storage.init_db(db_connection)
+    storage.upsert_repositories(
+        db_connection,
+        [
+            parse_repository_node(repository_node("R_1")),
+            parse_repository_node(repository_node("R_2")),
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="validação final da coleta falhou"):
+        validate_collection_target(db_connection, expected_total=3)

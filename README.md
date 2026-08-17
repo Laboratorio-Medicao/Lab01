@@ -106,6 +106,8 @@ pytest
 python -m src.collector                        # 1 lote de 25 repos
 python -m src.collector --per-page 25 --total 100   # S01: 100 repos (4 lotes de 25)
 python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginação completa)
+# Ao usar --total, o coletor valida no fim: total_rows == meta e distinct_ids == meta.
+# Exemplo da S02: exige exatamente 1.000 registros sem duplicatas de id.
 
 # Validação cruzada RQ01/RQ02 contra a API REST do GitHub (Issue #4)
 # gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md

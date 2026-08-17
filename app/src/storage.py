@@ -145,10 +145,12 @@ def upsert_repositories(connection, repos):
     connection.commit()
 
 
-def upsert_page_and_advance_cursor(connection, repos, cursor, total_collected):
+def upsert_page_and_advance_cursor(connection, repos, cursor):
     with connection:
         with connection.cursor() as db_cursor:
             _upsert_repositories_rows(db_cursor, repos)
+            db_cursor.execute(f"SELECT COUNT(*) FROM {REPOSITORIES_TABLE}")
+            total_collected = db_cursor.fetchone()[0]
             _save_collection_state_row(db_cursor, cursor, total_collected)
 
 
@@ -156,6 +158,18 @@ def count_repositories(connection):
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT COUNT(*) FROM {REPOSITORIES_TABLE}")
         return cursor.fetchone()[0]
+
+
+def get_repository_integrity_stats(connection):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS total_rows, COUNT(DISTINCT id) AS distinct_ids
+            FROM {REPOSITORIES_TABLE}
+            """
+        )
+        total_rows, distinct_ids = cursor.fetchone()
+    return {"total_rows": total_rows, "distinct_ids": distinct_ids}
 
 
 EXPORT_COLUMNS = [
