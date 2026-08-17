@@ -141,6 +141,12 @@ python -m src.export
 # gera docs/analise-rq07.md
 python -m analysis.analyze_rq07
 
+# Análise RQ08 (bônus) — distribuição, outliers e valores ausentes de
+# fork_star_ratio sobre os 1.000 repositórios, confrontando a hipótese
+# informal de star-farming registrada em docs/metodologia.md
+# gera docs/analise-rq08.md
+python -m analysis.analyze_rq08
+
 # Dashboard interativo — AINDA NÃO IMPLEMENTADO
 # (dashboard/generate.py não existe neste repositório ainda; planejado para S03)
 # python dashboard/generate.py
