@@ -111,7 +111,10 @@ def test_collect_page_filters_out_null_nodes(db_connection):
 @requires_supabase
 def test_collect_page_resumes_from_saved_cursor(db_connection):
     storage.init_db(db_connection)
-    storage.save_collection_state(db_connection, cursor="cursor-1", total_collected=10)
+    already_collected = [
+        parse_repository_node(repository_node(f"R_{i}")) for i in range(10)
+    ]
+    storage.upsert_page_and_advance_cursor(db_connection, already_collected, "cursor-1")
     client = FakeClient(
         {
             "repositoryCount": 1,
