@@ -4,9 +4,16 @@
 
 | Linguagem | Nº de repos | Mediana de PRs mergeadas por repo (RQ02) | Mediana de releases por repo (RQ03) | Mediana de dias desde último push (RQ04) |
 |---|---|---|---|---|
-| Python | 24 | 1881.5 | 54.0 | 1.5 |
-| TypeScript | 17 | 6981.0 | 116.0 | 0.1 |
-| JavaScript | 10 | 1373.5 | 69.0 | 0.4 |
+| Python | 229 | 560.0 | 20.0 | 5.2 |
+| TypeScript | 174 | 1996.5 | 134.0 | 2.6 |
+| JavaScript | 111 | 617.0 | 39.0 | 9.2 |
+| Go | 76 | 1690.0 | 139.5 | 2.8 |
+| Rust | 57 | 2491.0 | 90.0 | 2.4 |
+| Java | 41 | 939.0 | 54.0 | 4.2 |
+| C++ | 40 | 1121.0 | 50.5 | 3.3 |
+| Jupyter Notebook | 24 | 78.0 | 0.0 | 25.3 |
+| C | 21 | 294.0 | 43.0 | 3.9 |
+| Shell | 20 | 389.5 | 9.5 | 13.8 |
 
 ## Conclusão RQ07
 
@@ -14,8 +21,8 @@ A correlação de Spearman (ρ) mede se duas variáveis caminham juntas, variand
 
 Correlação entre popularidade da linguagem (nº de repos na amostra) e cada métrica:
 
-- **PRs mergeadas por repo (RQ02):** ρ = 0.50 → sem correlação clara
-- **Releases por repo (RQ03):** ρ = -0.50 → sem correlação clara
-- **Frequência de atualização — dias desde último push (RQ04):** ρ = -0.50 → sem correlação clara
+- **PRs mergeadas por repo (RQ02):** ρ = 0.52 → correlação positiva
+- **Releases por repo (RQ03):** ρ = 0.39 → sem correlação clara
+- **Frequência de atualização — dias desde último push (RQ04):** ρ = 0.35 → sem correlação clara
 
 **Resposta:** Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações.
