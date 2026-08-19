@@ -271,11 +271,11 @@ transformação, então a comparação é direta (igualdade de string ou `null`
 dos dois lados).
 
 **Fonte de referência para "linguagens mais populares" (exigida pelo
-enunciado da RQ05):** **GitHub Octoverse** (octoverse.github.com), a mesma
-citada no `README.md`. É a fonte usada, e mantida, em todo o laboratório
+enunciado da RQ05):** **TIOBE Index** (tiobe.com/tiobe-index), edição de
+agosto de 2026. É a fonte usada, e mantida, em todo o laboratório
 para responder "os sistemas populares estão nas linguagens mais populares?"
 — ou seja, a linguagem primária de cada repositório coletado (`RQ05`) é
-comparada contra o ranking de linguagens do Octoverse, não contra um ranking
+comparada contra o top 20 do TIOBE Index, não contra um ranking
 derivado da própria amostra. Essa distinção importa em especial para a RQ07
 (ver seção abaixo), que usa uma métrica de popularidade diferente por
 motivos práticos.
@@ -321,21 +321,21 @@ ranking de popularidade de linguagem e cada uma dessas três medianas.
 necessidade prática:** a RQ07 ranqueia as linguagens pelo **número de
 repositórios da própria amostra coletada** que as usam como `primary_language`
 (`repo_count`), e não pela posição da linguagem no ranking do GitHub
-Octoverse (a fonte externa adotada para a RQ05 — ver seção acima). Motivo:
-o Octoverse publica um ranking ordinal de linguagens, não um valor numérico
+TIOBE Index (a fonte externa adotada para a RQ05 — ver seção acima). Motivo:
+o TIOBE publica um ranking ordinal de linguagens, não um valor numérico
 por linguagem que sirva de variável contínua para correlacionar com as
 medianas de PRs/releases/atualização — usar só a posição no ranking (1º,
 2º, 3º...) como proxy funcionaria de forma parecida, mas a contagem de
 repositórios na amostra tem a vantagem adicional de já vir calculada dos
 mesmos dados coletados, sem depender de mapear manualmente cada linguagem da
-amostra para uma posição no Octoverse.
+amostra para uma posição no TIOBE.
 
 **Limitação que isso introduz:** "número de repositórios na amostra" mede
 popularidade **dentro do universo já filtrado de repositórios populares**,
 não popularidade da linguagem no ecossistema em geral — são conceitos
-relacionados, mas não idênticos, e podem divergir do ranking do Octoverse
+relacionados, mas não idênticos, e podem divergir do ranking do TIOBE
 (ex.: uma linguagem pode ser muito usada em repositórios de alto destaque no
-GitHub sem estar entre as mais populares do Octoverse, ou vice-versa). Por
+GitHub sem estar entre as mais populares do TIOBE, ou vice-versa). Por
 isso o texto gerado em `docs/analise-rq07.md` chama a métrica explicitamente
 de "proxy de popularidade", e o Relatório Final deve deixar claro, ao
 apresentar a RQ07, que a definição de "popular" usada ali não é a mesma
