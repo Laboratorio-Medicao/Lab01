@@ -113,12 +113,46 @@ Como referência para "linguagens de programação mais populares" (RQ05), o gru
 
 ### 3.3 Etapas
 
-| Sprint | Entregas | Responsável(is) | Issues |
-|---|---|---|---|
-| **S01** | Query GraphQL para 100 repositórios; validação cruzada RQ01–RQ06 contra REST API; GitHub Projects criado com colunas e WIP | [preencher] | [preencher] |
-| **S02** | Paginação para 1.000 repositórios via fila RabbitMQ; exportação CSV; análise exploratória RQ01–RQ07; hipóteses informais; snapshot do Kanban | [preencher] | [preencher] |
-| **S03** | Análise e visualização de dados para as 7 RQs | [preencher] | [preencher] |
-| **Relatório Final** | Documento final completo | [preencher] | [preencher] |
+**S01 — Infraestrutura e Coleta Inicial**
+
+| Issue | Título | Responsável |
+|---|---|---|
+| #10 | Setup do projeto e client GraphQL | Marcos Alberto |
+| #11 | Query e validação RQ01 e RQ02 | Marcos Alberto |
+| #12 | Validação RQ03 e RQ04 | Arthur Soares |
+| #13 | Validação RQ05, RQ06 | Guilherme Vieira |
+| #27 | Script de export do Kanban (Projects v2) | Guilherme Vieira |
+| #49 | Análise RQ07 (bônus): métricas por linguagem | Guilherme Vieira |
+| #55 | Correção da validação RQ06, refresh de dados e fix de collected_at | Marcos Alberto |
+
+**S02 — Paginação, CSV e Hipóteses**
+
+| Issue | Título | Responsável |
+|---|---|---|
+| #22 | Export Postgres para CSV | Marcos Alberto |
+| #23 | Análise exploratória e hipóteses RQ01 e RQ02 | Marcos Alberto |
+| #24 | Script de validação e hipóteses RQ03 e RQ04 | Arthur Soares |
+| #25 | Script de validação e hipóteses RQ05, RQ06 e RQ07 | Guilherme Vieira |
+| #26 | Paginação para 1000 repositórios | Arthur Soares |
+| #28 | Gerar snapshot S02 do Kanban | Guilherme Vieira |
+| #38 | Relatório: introdução, hipóteses e metodologia de coleta | Guilherme Vieira |
+| #44 | Fila de requisições para controle de rate limit | Guilherme Vieira |
+| #58 | RQ08 (bônus): coleta de fork_count, métrica fork_star_ratio e validação cruzada | Marcos Alberto |
+
+**S03 — Análise, Visualização e Dashboard** *(em andamento)*
+
+| Issue | Título | Responsável |
+|---|---|---|
+| #31 | Análise e visualização RQ01 e RQ02 | Marcos Alberto |
+| #32 | Análise e visualização RQ03 e RQ04 | Arthur Soares |
+| #33 | Análise e visualização RQ05, RQ06 e RQ07 (bônus) | Guilherme Vieira |
+| #34 | Matriz de correlação entre métricas | — |
+| #35 | Dashboard interativo HTML | — |
+| #39 | Relatório — Resultados e discussão RQ01 e RQ02 | Marcos Alberto |
+| #40 | Relatório — Resultados e discussão RQ03 e RQ04 | Arthur Soares |
+| #41 | Relatório — Resultados e discussão RQ05, RQ06 e RQ07 | — |
+| #42 | Relatório — Seção de configuração do processo | — |
+| #43 | Relatório — Revisão final e exportação PDF | — |
 
 **Configuração do processo — GitHub Projects:**
 
