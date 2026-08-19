@@ -128,11 +128,15 @@ python -m src.validate_rq08 --sample-size 8
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export
 
-# Análise por RQ01/RQ02 e RQ03/RQ04 — AINDA NÃO IMPLEMENTADO
-# (analysis/rq01_02.py e analysis/rq03_04.py não existem neste repositório ainda;
-# planejados para S03, junto com o restante da análise estatística/visualizações)
+# Análise por RQ01/RQ02 — AINDA NÃO IMPLEMENTADO
+# (analysis/rq01_02.py não existe neste repositório ainda; planejado para S03,
+# junto com o restante da análise estatística/visualizações)
 # python analysis/rq01_02.py
-# python analysis/rq03_04.py
+
+# Análise exploratória RQ03/RQ04 (1.000 repositórios completos da S02)
+# gera docs/analise-rq03-rq04.md com estatística descritiva, ausentes,
+# outliers, sanidade da distribuição e hipótese informal
+python -m analysis.analyze_rq03_rq04
 
 # Análise RQ07 (bônus) — implementado; roda como módulo, não como script solto
 # (rodar "python analysis/analyze_rq07.py" direto falha com
