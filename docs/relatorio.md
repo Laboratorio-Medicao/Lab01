@@ -1,4 +1,4 @@
-# Relatório de Laboratório
+<h1 align="center">Relatório de Laboratório</h1>
 
 | | |
 |---|---|
