@@ -7,9 +7,9 @@
 | **Turno / Período** | Noite / 6º |
 | **Professor(a)** | Danilo Maia |
 | **Laboratório** | Lab01 — Características de Repositórios Populares + Setup do Kanban |
-| **Grupo (trio)** | [Integrante 1] · [Integrante 2] · [Integrante 3] |
-| **Link do repositório / GitHub Projects** | [preencher] |
-| **Data de entrega** | [preencher] |
+| **Grupo (trio)** | Arthur Luiz Alves Soares  · Guilherme de Almeida Rocha Vieira · Marcos Alberto Ferreira Pinto  |
+| **Link do repositório / GitHub Projects** | https://github.com/Laboratorio-Medicao/Lab01 / https://github.com/orgs/Laboratorio-Medicao/projects/1 |
+| **Data de entrega** | 28/08/2026 |
 
 ---
 
