@@ -75,6 +75,12 @@ Como inovação própria (30%), o grupo propôs a **RQ08**, que mede a razão fo
 
 **Justificativa:** a popularidade da linguagem influencia o tamanho potencial da comunidade de contribuidores (RQ02), mas não determina a frequência de releases (RQ03) nem a atividade de push (RQ04), que são decisões de governança do projeto.
 
+#### RQ08 — Engajamento real (bônus)
+
+**Hipótese:** repositórios no grupo suspeito de star-farming (idade < 1,5 anos e mais de 100 mil estrelas) devem ter `fork_star_ratio` (fork_count / stargazer_count) sistematicamente mais baixo que o resto da amostra — estrelas compradas/automatizadas não se traduzem em forks, enquanto adoção orgânica gera ambos proporcionalmente.
+
+**Justificativa:** forks exigem uma ação deliberada de quem pretende usar, estudar ou contribuir com o código — um sinal de engajamento ativo bem mais custoso de forjar em massa do que uma estrela, que é um clique único sem intenção necessária de uso.
+
 ---
 
 ## 2. Contexto
@@ -201,7 +207,89 @@ Em vez de um script de coleta sequencial com `time.sleep` em caso de rate limit,
 
 ## 4. Resultados
 
-*[a preencher em S03]*
+Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S02, sem valores ausentes em nenhuma das métricas desta seção). As visualizações interativas (histogramas, box plots e gráficos de dispersão) referenciadas em cada RQ foram geradas em S03 e estão disponíveis nos arquivos HTML indicados.
+
+### 4.1 RQ01 — Idade do repositório
+
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 0,00 anos |
+| 1º quartil | 3,50 anos |
+| **Mediana** | **7,70 anos** |
+| Média | 7,65 anos |
+| 3º quartil | 11,33 anos |
+| Máximo | 18,40 anos |
+| Outliers (regra IQR 1,5×) | 0 |
+
+**Achado de star-farming:** 21 dos 1.000 repositórios (2,1%) têm idade < 1,5 anos e mais de 100 mil estrelas — liderados por `openclaw/openclaw` (386.403⭐, 0,70 anos) e outros projetos ligados ao hype recente de agentes de IA.
+
+**Visualização:** `docs/report-rq01-rq02.html` — histograma de idade, box plot, e dispersão idade × estrelas com destaque para o grupo de star-farming.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A mediana observada (7,70 anos) fica bem acima do limiar de 3 anos previsto, confirmando que a popularidade da maioria dos repositórios é fruto de acúmulo orgânico ao longo de vários anos, não de picos recentes. A cauda de repositórios jovens existe como esperado, mas é pequena (2,1%) e concentrada no fenômeno de star-farming/hype de IA já antecipado na hipótese. Um ponto que **diverge** da expectativa inicial é a magnitude dessa cauda: em S01 (amostra de 100), o mesmo padrão aparecia em 16% dos casos — quase 8× a proporção observada na amostra completa. A leitura mais provável é viés de amostra pequena: o corte "top 100" tende a capturar desproporcionalmente os repositórios em ascensão mais recente e virótica, enquanto o "top 1.000" dilui esse efeito com projetos de cauda mais longa e histórico mais consolidado.
+
+### 4.2 RQ02 — Pull requests aceitas
+
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 0 |
+| 1º quartil | 175 |
+| **Mediana** | **768** |
+| Média | 4.212,96 |
+| 3º quartil | 3.391,25 |
+| Máximo | 103.167 |
+| Outliers altos (regra IQR 1,5×) | 123 |
+
+**Top outliers:** `firstcontributions/first-contributions` (103.167), `llvm/llvm-project` (96.690), `elastic/elasticsearch` (95.345), `getsentry/sentry` (91.101), `home-assistant/core` (90.011), `rust-lang/rust` (73.490), `kubernetes/kubernetes` (65.646), `python/cpython` (62.610), entre outros.
+
+**Visualização:** `docs/report-rq01-rq02.html` — histograma em escala log10 (dada a forte assimetria) e box plot em escala linear.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A distância entre mediana (768) e média (4.212,96) já denuncia a forte assimetria à direita prevista, e os 123 outliers altos são majoritariamente projetos de infraestrutura madura com grande base de contribuidores externos (compiladores, bancos de dados, kernels de sistemas, frameworks de uso massivo) — exatamente o perfil antecipado na hipótese. Uma exceção interessante que a hipótese não previu é o outlier máximo, `firstcontributions/first-contributions`: não é um projeto de infraestrutura, mas um repositório criado especificamente como exercício de primeira contribuição em código aberto — sua função é gerar PRs em alto volume, o que infla a métrica por um motivo estrutural diferente do "engajamento de comunidade madura" hipotetizado para os demais outliers.
+
+### 4.3 RQ08 — Engajamento real: razão forks/estrelas (bônus)
+
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 0,0009 |
+| 1º quartil | 0,0772 |
+| **Mediana** | **0,1144** |
+| Média | 0,1458 |
+| 3º quartil | 0,1798 |
+| Máximo | 1,9449 |
+| Outliers altos (regra IQR 1,5×) | 53 |
+
+**Comparação star-farming vs. resto da amostra:**
+
+| Grupo | N | Mediana de `fork_star_ratio` |
+|---|---|---|
+| Star-farming (idade < 1,5a, > 100 mil⭐) | 21 | 0,1190 |
+| Resto da amostra | 979 | 0,1144 |
+
+**Visualização:** `docs/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
+
+**Discussão hipótese vs. resultado:** a hipótese **não se confirma**. Esperava-se que o grupo suspeito de star-farming apresentasse `fork_star_ratio` sistematicamente mais baixo — sinal de que estrelas artificiais não geram forks proporcionais —, mas a mediana observada nesse grupo (0,1190) é, na verdade, igual ou ligeiramente **maior** que a do resto da amostra (0,1144). Isso não invalida o achado de star-farming em si (RQ01), que se apoia em critério independente (idade × estrelas), mas indica que `fork_star_ratio` sozinho não é um discriminador forte para esse grupo específico. Uma leitura possível é que parte dos repositórios nesse grupo (ligados ao hype de agentes de IA) atrai também curiosidade genuína — testes, estudo de código, tentativas de uso — que se traduz em forks reais, mesmo quando uma fração das estrelas não é orgânica; ou que o N pequeno (21 repositórios) torna a mediana desse grupo sensível a poucos casos extremos.
+
+### 4.4 RQ03 — Frequência de releases
+
+*[a preencher em #40 — Arthur Soares]*
+
+### 4.5 RQ04 — Frequência de atualização
+
+*[a preencher em #40 — Arthur Soares]*
+
+### 4.6 RQ05 — Linguagens mais populares
+
+*[a preencher em #41]*
+
+### 4.7 RQ06 — Percentual de issues fechadas
+
+*[a preencher em #41]*
+
+### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização (bônus)
+
+*[a preencher em #41]*
 
 ---
 
