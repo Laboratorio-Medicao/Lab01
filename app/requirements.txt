@@ -4,3 +4,4 @@
 # compartilhado pelo time.
 psycopg2-binary
 pika>=1.3,<2
+plotly>=5
