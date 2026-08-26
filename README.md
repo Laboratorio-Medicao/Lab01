@@ -141,6 +141,9 @@ python -m analysis.analyze_rq03_rq04
 # Relatório HTML interativo com gráficos de RQ03/RQ04
 python -m analysis.report_rq03_rq04
 
+# Matriz de correlação global — Spearman, Pearson, Markdown, HTML e CSV
+python -m analysis.report_correlation
+
 # Análise RQ07 (bônus) — implementado; roda como módulo, não como script solto
 # (rodar "python analysis/analyze_rq07.py" direto falha com
 # ModuleNotFoundError: No module named 'src', pois o diretório do script não
