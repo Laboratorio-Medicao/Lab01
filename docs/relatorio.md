@@ -313,15 +313,77 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 ### 4.6 RQ05 — Linguagens mais populares
 
-*[a preencher em #41]*
+**N:** 1000 | **Sem linguagem definida:** 87 (8,7%) | **Referência:** TIOBE Index, agosto de 2026
+
+| Posição | Linguagem | Nº de repos | % da amostra | TIOBE Top 20 |
+|---|---|---|---|---|
+| 1 | Python | 229 | 22,9% | #1 |
+| 2 | TypeScript | 174 | 17,4% | — |
+| 3 | JavaScript | 111 | 11,1% | #6 |
+| 4 | Go | 76 | 7,6% | #14 |
+| 5 | Rust | 57 | 5,7% | #10 |
+| 6 | Java | 41 | 4,1% | #4 |
+| 7 | C++ | 40 | 4,0% | #3 |
+| 8 | Jupyter Notebook | 24 | 2,4% | — |
+| 9 | C | 21 | 2,1% | #2 |
+| 10 | Shell | 20 | 2,0% | — |
+
+Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, cobrindo 61,1% dos repositórios. As principais linguagens fora do TIOBE top 20 com representação significativa são: TypeScript (174 repos), Jupyter Notebook (24 repos), Shell (20 repos), HTML (11 repos) e Kotlin (9 repos).
+
+**Visualização:** `docs/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. Python no topo (22,9%, #1 no TIOBE) e TypeScript como principal exceção fora do ranking TIOBE foram exatamente os dois pontos centrais previstos. A previsão de C e C++ logo após JavaScript, porém, **não se confirma**: Go (#4, 7,6%) e Rust (#5, 5,7%) ocupam essas posições, refletindo a forte presença de projetos de infraestrutura moderna e sistemas de alto desempenho no topo do GitHub — domínios em que Go e Rust ganharam tração expressiva a partir de 2022. C++ (#7) e C (#9) aparecem, mas já atrás de Java. O resultado reforça que o perfil do top 1.000 do GitHub é influenciado pelo crescimento recente de linguagens de sistemas modernas, além do domínio histórico esperado.
+
+**Validação dos dados:** na amostra de oito repositórios, `primaryLanguage` coincidiu integralmente entre GraphQL e REST em todos os casos ([validacao-rq05-rq06.md](validacao-rq05-rq06.md)).
 
 ### 4.7 RQ06 — Percentual de issues fechadas
 
-*[a preencher em #41]*
+| Métrica | Valor |
+|---|---|
+| N (repositórios com ao menos uma issue) | 957 |
+| Repositórios sem nenhuma issue (ratio indefinido) | 43 |
+| Mínimo | 0,0769 |
+| 1º quartil | 0,7044 |
+| **Mediana** | **0,8763** |
+| Média | 0,8025 |
+| 3º quartil | 0,9677 |
+| Máximo | 1,0000 |
+| Outliers altos (regra IQR 1,5×) | 0 |
+
+**Visualização:** `docs/report-rq05-rq06-rq07.html` — histograma e box plot da razão de issues fechadas.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A mediana de 0,8763 está bem acima do limiar de 0,5 previsto, e a distribuição é claramente assimétrica à esquerda — concentrada próxima de 1,0, com 3º quartil em 0,9677. Isso indica que a vasta maioria dos repositórios populares mantém um backlog bem gerenciado. A cauda de projetos com baixo fechamento existe (mínimo de 0,0769), mas é estreita — não há nenhum outlier alto pela regra do IQR, o que reforça a concentração da distribuição em valores elevados. Um ponto que a hipótese não antecipou é a ausência total de outliers altos: esperava-se variância maior em projetos muito ativos com taxa de abertura superior à de fechamento, mas os dados mostram que mesmo esses projetos conseguem manter razões de fechamento acima do 1º quartil (0,70).
+
+**Validação dos dados:** nas discrepâncias pontuais identificadas (`f/prompts.chat` e `Shubhamsaboo/awesome-llm-apps`), a divergência nas contagens de issues abertas entre GraphQL e REST é atribuída a atividade ocorrida entre as duas coletas — não a erro de coleta ([validacao-rq05-rq06.md](validacao-rq05-rq06.md)).
 
 ### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização (bônus)
 
-*[a preencher em #41]*
+**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana.
+
+| Linguagem | Nº de repos | Mediana de PRs mergeadas (RQ02) | Mediana de releases (RQ03) | Mediana de dias desde último push (RQ04) |
+|---|---|---|---|---|
+| Python | 229 | 560,0 | 20,0 | 5,2 |
+| TypeScript | 174 | 1.996,5 | 134,0 | 2,6 |
+| JavaScript | 111 | 617,0 | 39,0 | 9,2 |
+| Go | 76 | 1.690,0 | 139,5 | 2,8 |
+| Rust | 57 | 2.491,0 | 90,0 | 2,4 |
+| Java | 41 | 939,0 | 54,0 | 4,2 |
+| C++ | 40 | 1.121,0 | 50,5 | 3,3 |
+| Jupyter Notebook | 24 | 78,0 | 0,0 | 25,3 |
+| C | 21 | 294,0 | 43,0 | 3,9 |
+| Shell | 20 | 389,5 | 9,5 | 13,8 |
+
+**Correlação de Spearman entre popularidade da linguagem (nº de repos) e cada métrica:**
+
+| Métrica | ρ | Interpretação |
+|---|---|---|
+| PRs mergeadas (RQ02) | 0,52 | correlação positiva moderada |
+| Releases (RQ03) | 0,39 | sem correlação clara |
+| Dias desde último push (RQ04) | 0,35 | sem correlação clara |
+
+**Visualização:** `docs/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. A correlação moderada com PRs mergeadas (ρ = 0,52) confirma a previsão de que popularidade da linguagem amplia o pool potencial de contribuidores externos, mas esse efeito é atenuado: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), que são menos frequentes na amostra. Isso sugere que o tipo de projeto importa mais do que a linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização (ρ ≈ 0,35–0,39), a correlação fraca confirma que essas métricas dependem da política de governança de cada projeto, não da linguagem usada: Jupyter Notebook, por exemplo, tem mediana de releases igual a zero apesar de 24 repositórios na amostra, por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
 
 ---
 
