@@ -162,9 +162,25 @@ Como referência para "linguagens de programação mais populares" (RQ05), o gru
 
 **Configuração do processo — GitHub Projects:**
 
-- **Colunas (Status):** Backlog → To Do → Doing → Review → Done
-- **Limite de WIP (Doing):** [preencher — valor e justificativa]
-- **Print do board:** [inserir captura de tela ao final do laboratório]
+O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes colunas:
+
+| Coluna | Descrição |
+|---|---|
+| **Backlog** | Tarefas identificadas mas ainda não priorizadas para a sprint |
+| **To Do** | Tarefas priorizadas para a sprint corrente, aguardando início |
+| **Doing** | Tarefas em andamento — sujeitas ao limite de WIP |
+| **Review** | Tarefas concluídas aguardando revisão do grupo |
+| **Done** | Tarefas encerradas e revisadas |
+
+**Limite de WIP (Work in Progress):** `6 itens na coluna Doing`
+
+**Justificativa:** o grupo é formado por 3 integrantes. Adotamos WIP = 6 (2 por integrante) para acomodar situações em que uma tarefa está bloqueada aguardando revisão de outro membro — permitindo que o integrante inicie uma segunda tarefa sem paralisar o fluxo, sem perder a visibilidade sobre o trabalho em andamento nem gerar sobrecarga excessiva.
+
+**Link do board:** https://github.com/orgs/Laboratorio-Medicao/projects/1
+
+**Print do board:**
+
+![Kanban board — Sprint S03](kanban-board-s03.png)
 
 ### 3.4 Ferramentas
 
@@ -389,7 +405,19 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 ## 5. Conclusão
 
-*[a preencher no Relatório Final]*
+Este laboratório analisou os 1.000 repositórios com maior número de estrelas no GitHub (coleta de agosto de 2026) ao longo de sete questões de pesquisa e uma métrica bônus. Os resultados permitem traçar um perfil coerente do que caracteriza um repositório popular no GitHub:
+
+**Maturidade e contribuição (RQ01 e RQ02).** Repositórios populares são predominantemente maduros: a mediana de idade é de 7,70 anos, confirmando que popularidade orgânica é um processo acumulativo. A distribuição de pull requests aceitas é fortemente assimétrica (mediana de 768; média de 4.212), com outliers formados por projetos de infraestrutura madura — compiladores, bancos de dados, frameworks de uso massivo —, exatamente o perfil esperado para projetos que constroem grandes comunidades de contribuidores externos.
+
+**Ciclo de releases e atividade (RQ03 e RQ04).** Repositórios populares tendem a ser atualizados com frequência (mediana de 5,87 dias desde o último push), mas o número de releases é altamente variável: 28% dos repositórios não possuem releases formais, refletindo projetos de documentação, listas curadas e projetos com entrega contínua que não usam o mecanismo de release do GitHub. A cauda de projetos inativos existe, mas é estreita dentro do recorte dos 1.000 mais estrelados.
+
+**Linguagens e issues (RQ05 e RQ06).** Python domina o topo (22,9%) em linha com o TIOBE, mas TypeScript (17,4%) emerge como segunda linguagem mais representada apesar de estar fora do ranking TIOBE — reflexo de sua adoção massiva em projetos open-source modernos de frontend e tooling. C e C++ aparecem mais abaixo do esperado, superados por Go e Rust, que cresceram fortemente em projetos de sistemas de alto desempenho. O backlog de issues é bem gerenciado: mediana de razão de fechamento de 0,8763, com a distribuição concentrada próxima de 1,0.
+
+**Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. A correlação de Spearman entre popularidade da linguagem e PRs mergeadas é moderada (ρ = 0,52) e, mesmo assim, é explicada mais pelo tipo de projeto do que pela linguagem em si. Para releases e atualização a correlação é fraca (ρ ≈ 0,35–0,39), confirmando que essas métricas são governadas pela política interna de cada projeto.
+
+**Engajamento real vs. star-farming (RQ08 — bônus).** A hipótese de que repositórios suspeitos de star-farming apresentariam `fork_star_ratio` mais baixo não se confirmou: a mediana do grupo suspeito (0,1190) é ligeiramente superior à do restante da amostra (0,1144). Isso indica que `fork_star_ratio` sozinho não é um discriminador eficaz para esse fenômeno — parte dos repositórios desse grupo pode atrair curiosidade e forks genuínos mesmo com uma fração de estrelas inorgânicas, e o N pequeno (21 repositórios) amplifica a sensibilidade da mediana a casos extremos.
+
+**Limitações e trabalhos futuros.** O estudo é transversal (snapshot de agosto de 2026) e não permite inferir causalidade. O limite hard de 1.000 resultados da API de busca do GitHub restringe a amostra aos repositórios de maior visibilidade, o que pode não representar o conjunto amplo de projetos open-source. Estudos longitudinais com séries temporais de stars, forks e commits poderiam revelar dinâmicas de popularidade mais ricas do que as captadas por um único snapshot.
 
 ---
 
