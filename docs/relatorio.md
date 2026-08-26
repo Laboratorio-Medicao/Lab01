@@ -55,32 +55,6 @@ Como inovação própria (30%), o grupo propôs a **RQ08**, que mede a razão fo
 
 **Justificativa:** sistemas com alta popularidade tendem a atrair usuários que reportam bugs e sugerem melhorias, o que mantém os mantenedores ativos. Exceções naturais são projetos considerados "completos" ou repositórios de conteúdo estático.
 
-### Resultados e discussão — RQ03 e RQ04
-
-A análise foi realizada sobre os 1.000 repositórios da coleta S02. Os cálculos completos, incluindo os gráficos interativos, estão disponíveis em [analise-rq03-rq04.md](analise-rq03-rq04.md) e [report-rq03-rq04.html](report-rq03-rq04.html).
-
-#### RQ03 — Frequência de releases
-
-Foram observados 1.000 valores válidos de `releases_count`. A média foi de **127,35 releases**, enquanto a mediana foi de **39,50**. O primeiro quartil foi igual a 0 e o terceiro quartil foi 148,25, com máximo de 1.000 releases. Além disso, **280 repositórios (28,00%) não possuíam nenhum release formal**.
-
-A diferença entre média e mediana, junto à distância entre o terceiro quartil e o máximo, indica uma distribuição assimétrica à direita. A regra do IQR identificou 94 valores atípicos altos, correspondentes a 9,40% dos repositórios válidos. Portanto, os releases estão concentrados em uma parcela menor de projetos, enquanto muitos repositórios populares lançam poucos releases ou não usam esse mecanismo formal de versionamento.
-
-Esse resultado apoia a hipótese de que a frequência de releases varia bastante entre os projetos e depende da política de versionamento. A popularidade, por si só, não implica uma grande quantidade de releases: projetos de documentação, listas curadas, materiais de estudo e projetos que adotam entrega contínua podem permanecer populares sem publicar releases formais com frequência.
-
-#### RQ04 — Frequência de atualização
-
-Para `dias_desde_ultimo_push`, também foram obtidos 1.000 valores válidos. A mediana foi de **5,87 dias**, abaixo do limite de 30 dias estabelecido na hipótese, enquanto a média foi de **116,36 dias**. O primeiro quartil foi de 2,71 dias, o terceiro quartil de 52,50 dias e o máximo de 2.451,77 dias, aproximadamente 6,7 anos.
-
-Essa diferença expressiva entre média e mediana mostra uma cauda longa: a maioria dos repositórios teve um push recente, mas uma parcela menor apresentou períodos muito maiores sem atualização. A regra do IQR identificou 190 outliers, ou 19,00% dos valores válidos. Nenhum repositório estava há pelo menos dez anos sem push, mas o maior valor observado confirma a existência de projetos históricos ou pouco ativos na amostra.
-
-Assim, a hipótese de concentração em atualizações recentes foi apoiada. A evidência de uma parcela extremamente antiga foi apenas parcialmente confirmada: há uma cauda de baixa atividade, mas não foram encontrados casos com dez anos ou mais desde o último push. Esse resultado é compatível com uma amostra formada pelos repositórios mais populares do GitHub, na qual projetos abandonados tendem a ser menos numerosos.
-
-#### Validade dos dados e limitações
-
-Não foram encontrados valores ausentes, timestamps inválidos ou datas futuras nos campos usados. Na validação cruzada, os oito repositórios amostrados apresentaram igualdade entre os valores GraphQL e REST para `releases_count` e `pushed_at`, fornecendo evidência de consistência da coleta ([validacao-rq03-rq04.md](validacao-rq03-rq04.md)).
-
-As conclusões devem ser interpretadas com cautela. `releases_count` é uma contagem acumulada e favorece projetos mais antigos, enquanto `pushed_at` representa apenas o último push e não mede a frequência histórica de commits. Além disso, a análise é transversal, baseada nos 1.000 repositórios mais estrelados em uma única data de referência; portanto, descreve associação e distribuição, mas não permite afirmar causalidade entre popularidade, releases e atualização.
-
 #### RQ05 — Linguagens mais populares
 
 **Hipótese:** Python e JavaScript devem ocupar as primeiras posições da distribuição. C e C++ devem aparecer em seguida, puxados por projetos de sistemas com grande base de estrelas acumulada. A maioria das linguagens com representação expressiva na amostra deve coincidir com o top 20 do TIOBE Index. A principal exceção esperada é TypeScript, que tem forte presença no GitHub mas não aparece no top 20 do TIOBE.
@@ -299,11 +273,43 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 ### 4.4 RQ03 — Frequência de releases
 
-*[a preencher em #40 — Arthur Soares]*
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 0 |
+| 1º quartil | 0 |
+| **Mediana** | **39,50** |
+| Média | 127,35 |
+| 3º quartil | 148,25 |
+| Máximo | 1.000 |
+| Outliers altos (regra IQR 1,5×) | 94 |
+
+**Sanidade da distribuição:** 280 repositórios (28,00%) não possuíam releases formais. Não foram identificados valores ausentes em `releases_count`.
+
+**Visualização:** `docs/report-rq03-rq04.html` — histograma em escala log10 e box plot do total de releases.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A média (127,35) é muito superior à mediana (39,50), e o máximo de 1.000 releases, combinado com 94 outliers altos, evidencia uma distribuição assimétrica à direita. O resultado também confirma que popularidade não implica necessariamente muitos releases: 28,00% dos repositórios não utilizam releases formais, possivelmente por adotarem entrega contínua ou por serem projetos de documentação, listas curadas e materiais de estudo. A métrica é uma contagem acumulada e, portanto, também pode favorecer projetos mais antigos.
 
 ### 4.5 RQ04 — Frequência de atualização
 
-*[a preencher em #40 — Arthur Soares]*
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 2,46 dias |
+| 1º quartil | 2,71 dias |
+| **Mediana** | **5,87 dias** |
+| Média | 116,36 dias |
+| 3º quartil | 52,50 dias |
+| Máximo | 2.451,77 dias |
+| Outliers altos (regra IQR 1,5×) | 190 |
+
+**Sanidade da distribuição:** nenhum repositório estava há pelo menos dez anos sem push. O maior valor observado corresponde a aproximadamente 6,7 anos desde a última atualização. Não foram encontrados valores ausentes, inválidos ou futuros em `pushed_at`.
+
+**Visualização:** `docs/report-rq03-rq04.html` — histograma em escala log10, box plot e dispersão entre releases e dias desde o último push.
+
+**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. A mediana de 5,87 dias, inferior ao limite previsto de 30 dias, mostra que a maioria dos repositórios populares foi atualizada recentemente. A diferença entre média e mediana, o máximo de 2.451,77 dias e os 190 outliers altos indicam uma cauda de projetos com baixa atividade. Entretanto, a expectativa de encontrar repositórios com dez anos ou mais sem atualização não foi confirmada. Isso é compatível com o recorte dos 1.000 repositórios mais estrelados, que tende a privilegiar projetos ainda visíveis e ativos.
+
+**Validação dos dados:** na amostra de oito repositórios, `releases_count` e `pushed_at` coincidiram integralmente entre GraphQL e REST ([validacao-rq03-rq04.md](validacao-rq03-rq04.md)). Ainda assim, `pushed_at` mede apenas o último push e não representa a frequência histórica de commits; as conclusões descrevem a amostra em uma data de referência e não estabelecem causalidade.
 
 ### 4.6 RQ05 — Linguagens mais populares
 
