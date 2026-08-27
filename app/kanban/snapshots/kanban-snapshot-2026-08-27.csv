@@ -1,0 +1,39 @@
+number,title,status,assignees,labels
+43,[S6] Relatório — Revisão final e exportação PDF,Done,GuilhermeVieira05,tarefa|relatorio
+66,[S7] Snapshot kanban - Sprint 3,Done,GuilhermeVieira05,feat
+40,[S3] Relatório — Resultados e discussão RQ03 e RQ04,Done,ALuiz19,tarefa|relatorio
+34,[S4] Sprint S03 — Matriz de correlação entre métricas,Done,ALuiz19,tarefa|sprint-s03
+32,[S2] Sprint S03 — Análise e visualização RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s03
+30,[REFINAMENTO] S0 - Sprint S03,Done,GuilhermeVieira05,refinamento|sprint-s03
+29,"[FEAT] Sprint S03 — Análise, Visualização e Dashboard",Done,,feat|sprint-s03
+35,[S5] Sprint S03 — Dashboard interativo HTML,Done,marcosffp,tarefa|sprint-s03
+42,[S5] Relatório — Seção de configuração do processo,Done,GuilhermeVieira05,tarefa|relatorio
+41,"[S4] Relatório — Resultados e discussão RQ05, RQ06 e RQ07",Done,GuilhermeVieira05,tarefa|relatorio
+33,"[S3] Sprint S03 — Análise e visualização RQ05, RQ06 e RQ07 (bônus)",Done,GuilhermeVieira05,tarefa|sprint-s03
+31,"[S1] Sprint S03 — Análise e visualização RQ01, RQ02 e RQ08",Done,marcosffp,tarefa|sprint-s03
+39,"[S2] Relatório — Resultados e discussão RQ01, RQ02 e RQ08",Done,marcosffp,tarefa|relatorio
+20,"[FEAT] Sprint S02 — Paginação, CSV e Hipóteses",Done,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s02
+28,[S7] Sprint S02 — Gerar snapshot S02 do Kanban,Done,GuilhermeVieira05,tarefa|sprint-s02
+38,"[S9] Sprint S02 — Relatório: introdução, hipóteses e metodologia de coleta",Done,GuilhermeVieira05,tarefa|relatorio
+25,"[S4] Sprint S02 — Script de validação e hipóteses RQ05, RQ06 e RQ07",Done,GuilhermeVieira05,tarefa|sprint-s02
+27,[S6] Sprint S01 — Script de export do Kanban (Projects v2),Done,GuilhermeVieira05,tarefa|sprint-s02
+44,[S8] Sprint S02 — Fila de requisições para controle de rate limit,Done,GuilhermeVieira05,tarefa|sprint-s02
+58,"[S10] Sprint S02 - RQ08 (bônus): coleta de fork_count, métrica fork_star_ratio e validação cruzada",Done,marcosffp,tarefa|sprint-s02
+23,[S2] Sprint S02 — Análise exploratória e hipóteses RQ01 e RQ02,Done,marcosffp,tarefa|sprint-s02
+10,[S1] Sprint S01 — Setup do projeto e client GraphQL,Done,marcosffp,tarefa|sprint-s01
+26,[S5] Sprint S02 — Paginação para 1000 repositórios,Done,ALuiz19,tarefa|sprint-s02
+22,[S1] Sprint S02 — Export Postgres para CSV,Done,marcosffp,tarefa|sprint-s02
+8,[FEAT] Sprint S01 — Infraestrutura e Coleta Inicial,Done,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s01
+52,Definição do limite de WIP do board Kanban,Done,GuilhermeVieira05,
+11,[S2] Sprint S01 — Query e validação RQ01 e RQ02,Done,marcosffp,tarefa|sprint-s01
+13,"[S3] Sprint S01 — Validação RQ05, RQ06",Done,GuilhermeVieira05,tarefa|sprint-s01
+12,[S2] Sprint S01 — Validação RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s01
+19,"[S4] Sprint S02 — Script de validação e hipóteses RQ05, RQ06 e RQ07",Done,GuilhermeVieira05,tarefa|sprint-s02
+18,[S3] Sprint S02 — Script de validação e hipóteses RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s02
+17,[S2] Sprint S02 — Análise exploratória e hipóteses RQ01 e RQ02,Done,marcosffp,tarefa|sprint-s02
+15,[REFINAMENTO] S0 - Sprint S02,Done,,refinamento|sprint-s02
+9,[REFINAMENTO] S0 - Sprint S01,Done,GuilhermeVieira05,refinamento|sprint-s01
+49,[S4] Sprint S01 — Análise RQ07 (bônus): métricas por linguagem,Done,GuilhermeVieira05,tarefa|sprint-s01
+55,"[S4]  Sprint S01 - Correção da validação RQ06, refresh de dados e fix de collected_at",Done,marcosffp,bug|sprint-s01
+24,[S3] Sprint S02 — Script de validação e hipóteses RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s02
+21,[REFINAMENTO] S0 - Sprint S02,Done,GuilhermeVieira05,refinamento|sprint-s02
