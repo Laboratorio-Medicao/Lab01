@@ -1,11 +1,11 @@
 number,title,status,assignees,labels
-43,[S6] Relatório — Revisão final e exportação PDF,Done,GuilhermeVieira05,tarefa|relatorio
+43,[S6] Relatório — Revisão final e exportação PDF,In progress,GuilhermeVieira05,tarefa|relatorio
 66,[S7] Snapshot kanban - Sprint 3,Done,GuilhermeVieira05,feat
 40,[S3] Relatório — Resultados e discussão RQ03 e RQ04,Done,ALuiz19,tarefa|relatorio
 34,[S4] Sprint S03 — Matriz de correlação entre métricas,Done,ALuiz19,tarefa|sprint-s03
 32,[S2] Sprint S03 — Análise e visualização RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s03
-30,[REFINAMENTO] S0 - Sprint S03,Done,GuilhermeVieira05,refinamento|sprint-s03
-29,"[FEAT] Sprint S03 — Análise, Visualização e Dashboard",Done,,feat|sprint-s03
+30,[REFINAMENTO] S0 - Sprint S03,Done,ALuiz19|GuilhermeVieira05|marcosffp,refinamento|sprint-s03
+29,"[FEAT] Sprint S03 — Análise, Visualização e Dashboard",Done,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s03
 35,[S5] Sprint S03 — Dashboard interativo HTML,Done,marcosffp,tarefa|sprint-s03
 42,[S5] Relatório — Seção de configuração do processo,Done,GuilhermeVieira05,tarefa|relatorio
 41,"[S4] Relatório — Resultados e discussão RQ05, RQ06 e RQ07",Done,GuilhermeVieira05,tarefa|relatorio
@@ -31,7 +31,7 @@ number,title,status,assignees,labels
 19,"[S4] Sprint S02 — Script de validação e hipóteses RQ05, RQ06 e RQ07",Done,GuilhermeVieira05,tarefa|sprint-s02
 18,[S3] Sprint S02 — Script de validação e hipóteses RQ03 e RQ04,Done,ALuiz19,tarefa|sprint-s02
 17,[S2] Sprint S02 — Análise exploratória e hipóteses RQ01 e RQ02,Done,marcosffp,tarefa|sprint-s02
-15,[REFINAMENTO] S0 - Sprint S02,Done,,refinamento|sprint-s02
+15,[REFINAMENTO] S0 - Sprint S02,Done,GuilhermeVieira05,refinamento|sprint-s02
 9,[REFINAMENTO] S0 - Sprint S01,Done,GuilhermeVieira05,refinamento|sprint-s01
 49,[S4] Sprint S01 — Análise RQ07 (bônus): métricas por linguagem,Done,GuilhermeVieira05,tarefa|sprint-s01
 55,"[S4]  Sprint S01 - Correção da validação RQ06, refresh de dados e fix de collected_at",Done,marcosffp,bug|sprint-s01

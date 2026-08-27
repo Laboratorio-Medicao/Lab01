@@ -282,19 +282,19 @@ Definições operacionais completas de cada métrica — incluindo tratamento de
 | #42 | Relatório — Seção de configuração do processo | — |
 | #43 | Relatório — Revisão final e exportação PDF | — |
 
-**Configuração do processo — GitHub Projects:**
+#### Configuração do processo — GitHub Projects
 
 O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes colunas:
 
 | Coluna | Descrição |
 |---|---|
 | **Backlog** | Tarefas identificadas mas ainda não priorizadas para a sprint |
-| **To Do** | Tarefas priorizadas para a sprint corrente, aguardando início |
-| **Doing** | Tarefas em andamento — sujeitas ao limite de WIP |
-| **Review** | Tarefas concluídas aguardando revisão do grupo |
+| **Ready** | Tarefas priorizadas para a sprint corrente, aguardando início |
+| **In progress** | Tarefas em andamento — sujeitas ao limite de WIP |
+| **In review** | Tarefas concluídas aguardando revisão do grupo |
 | **Done** | Tarefas encerradas e revisadas |
 
-**Limite de WIP (Work in Progress):** `6 itens na coluna Doing`
+**Limite de WIP (Work in Progress):** `6 itens na coluna In progress`
 
 **Justificativa:** o grupo é formado por 3 integrantes. Adotamos WIP = 6 (2 por integrante) para acomodar situações em que uma tarefa está bloqueada aguardando revisão de outro membro — permitindo que o integrante inicie uma segunda tarefa sem paralisar o fluxo, sem perder a visibilidade sobre o trabalho em andamento nem gerar sobrecarga excessiva.
 
@@ -316,6 +316,7 @@ O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes co
 | **pytest** | Testes unitários e de integração |
 | **GitHub GraphQL API** | Coleta dos campos de cada repositório |
 | **GitHub REST API** | Validação cruzada dos dados coletados |
+| **Plotly** | Geração dos gráficos interativos (histogramas, box plots, dispersão) usados nas seções 4.2–4.9 e no dashboard |
 | **GitHub Projects (v2)** | Gestão do processo — link: https://github.com/orgs/Laboratorio-Medicao/projects/1 |
 
 ### 3.5 Tabela de Métricas
@@ -529,7 +530,7 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 ### 4.9 RQ07 — Linguagem vs. contribuição, releases e atualização
 
-**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
+**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. Spearman foi escolhido sobre Pearson por ser robusto à forte assimetria e aos outliers presentes nas distribuições de PRs e releases (documentado em `docs/analises/analise-correlacao.md`). A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
 
 | Linguagem | Nº de repos | Mediana de PRs mergeadas (RQ02) | Mediana de releases (RQ03) | Mediana de dias desde último push (RQ04) |
 |---|---|---|---|---|
@@ -544,19 +545,19 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 | C | 21 | 294,0 | 43,0 | 1,4 |
 | Shell | 20 | 389,5 | 9,5 | 12,4 |
 
-**Critério de inclusão:** apenas linguagens com pelo menos 10 repositórios na amostra entram na análise (`min_repos=10`), e a tabela exibe as 10 mais frequentes dentre essas. 13 linguagens atingem o critério de ≥10 repositórios — além das 10 exibidas, também qualificam Ruby (13), HTML (11) e Swift (10), omitidas da tabela apenas pelo corte de exibição top-10, não por não atenderem ao método.
+**Critério de inclusão:** apenas linguagens com pelo menos 10 repositórios na amostra entram na análise (`min_repos=10`). 13 linguagens atingem esse critério; a tabela exibe as 10 mais frequentes, e **a correlação de Spearman também foi calculada sobre essas mesmas 10** (Ruby, HTML e Swift qualificam pelo critério de ≥10 repositórios mas não entraram no cálculo). **Limitação:** com n=10 pontos, o ρ crítico para significância estatística a α=0,05 (bicaudal) é ≈0,648 — nenhum dos três valores reportados abaixo atinge esse limiar, portanto os resultados devem ser lidos como indicativos de tendência, não como correlações estatisticamente confirmadas.
 
 **Correlação de Spearman entre popularidade da linguagem (nº de repos) e cada métrica:**
 
-| Métrica | ρ | Interpretação |
+| Métrica | ρ | Interpretação (indicativa) |
 |---|---|---|
-| PRs mergeadas (RQ02) | 0,52 | correlação positiva moderada |
-| Releases (RQ03) | 0,39 | sem correlação clara |
-| Dias desde último push (RQ04) | 0,39 | sem correlação clara |
+| PRs mergeadas (RQ02) | 0,52 | tendência positiva moderada |
+| Releases (RQ03) | 0,39 | tendência positiva fraca |
+| Dias desde último push (RQ04) | 0,39 | tendência positiva fraca |
 
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
 
-**Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. A correlação moderada com PRs mergeadas (ρ = 0,52) confirma a previsão de que popularidade da linguagem amplia o pool potencial de contribuidores externos, mas esse efeito é atenuado: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), que são menos frequentes na amostra. Isso sugere que o tipo de projeto importa mais do que a linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização (ρ = 0,39 em ambas), a correlação fraca confirma que essas métricas dependem da política de governança de cada projeto, não da linguagem usada: Jupyter Notebook, por exemplo, tem mediana de releases igual a zero apesar de 24 repositórios na amostra, por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. As correlações de Spearman calculadas sobre as 10 linguagens mais frequentes apontam uma tendência positiva moderada com PRs mergeadas (ρ = 0,52) e tendências fracas com releases e atualização (ρ = 0,39 em ambas) — mas, dado o tamanho amostral reduzido (n=10), nenhum valor é estatisticamente significativo a α=0,05, de modo que os resultados são tratados como indicativos de padrão, não como evidência confirmatória definitiva. A interpretação qualitativa, ainda assim, é coerente com a hipótese: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), sugerindo que o tipo de projeto importa mais do que a popularidade da linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização, a tendência fraca confirma que essas métricas dependem da política de governança de cada projeto: Jupyter Notebook tem mediana de releases igual a zero por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
 
 ---
 
@@ -570,7 +571,7 @@ Este laboratório analisou os 1.000 repositórios com maior número de estrelas 
 
 **Linguagens e issues (RQ05 e RQ06).** Python domina o topo (22,9%) em linha com o TIOBE, mas TypeScript (17,4%) emerge como segunda linguagem mais representada apesar de estar fora do ranking TIOBE — reflexo de sua adoção massiva em projetos open-source modernos de frontend e tooling. C e C++ aparecem mais abaixo do esperado, superados por Go e Rust, que cresceram fortemente em projetos de sistemas de alto desempenho. O backlog de issues é bem gerenciado: mediana de razão de fechamento de 0,8763, com a distribuição concentrada próxima de 1,0.
 
-**Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. A correlação de Spearman entre popularidade da linguagem e PRs mergeadas é moderada (ρ = 0,52) e, mesmo assim, é explicada mais pelo tipo de projeto do que pela linguagem em si. Para releases e atualização a correlação é fraca (ρ = 0,39 em ambas), confirmando que essas métricas são governadas pela política interna de cada projeto.
+**Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. As correlações de Spearman (ρ = 0,52 para PRs; ρ = 0,39 para releases e atualização) são indicativas de tendência, mas não estatisticamente significativas dado o número reduzido de linguagens analisadas (n=10). O padrão observado sugere que o tipo de projeto — mais do que a linguagem — é o fator determinante: Rust e TypeScript lideram em PRs mergeadas apesar de serem menos frequentes na amostra, enquanto as métricas de release e atualização refletem escolhas de governança de cada projeto.
 
 **Engajamento real vs. star-farming (RQ08 — bônus).** A hipótese de que repositórios suspeitos de star-farming apresentariam `fork_star_ratio` mais baixo não se confirmou: a mediana do grupo suspeito (0,1190) é ligeiramente superior à do restante da amostra (0,1144). Isso indica que `fork_star_ratio` sozinho não é um discriminador eficaz para esse fenômeno — parte dos repositórios desse grupo pode atrair curiosidade e forks genuínos mesmo com uma fração de estrelas inorgânicas, e o N pequeno (21 repositórios) amplifica a sensibilidade da mediana a casos extremos.
 
@@ -580,6 +581,8 @@ Este laboratório analisou os 1.000 repositórios com maior número de estrelas 
 
 ## 6. Referências
 
-ZUSE, Horst. *A framework of software measurement*. Walter de Gruyter, 2013.
+BASILI, V. R.; CALDIERA, G.; ROMBACH, H. D. **The Goal Question Metric Approach**. Encyclopedia of Software Engineering. Wiley, 1994.
 
 TIOBE Software. **TIOBE Index for August 2026**. Disponível em: https://www.tiobe.com/tiobe-index/. Acesso em: ago. 2026.
+
+ZUSE, Horst. *A framework of software measurement*. Walter de Gruyter, 2013.

@@ -264,7 +264,7 @@ def render_html(
 <body>
   <h1>Relatório de Análise — RQ03 e RQ04</h1>
   <p>Sprint S03 — 1.000 repositórios mais populares do GitHub</p>
-  {"\\n".join(sections)}
+  {chr(10).join(sections)}
 </body>
 </html>"""
 
