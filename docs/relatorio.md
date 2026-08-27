@@ -235,7 +235,7 @@ Definições operacionais completas de cada métrica — incluindo tratamento de
 
 **TIOBE Index como referência para RQ05:** escolhido por medir popularidade com base em buscas globais (metodologia pública e auditável), com edição mensal que permite replicar o estudo com a mesma referência temporal. A edição de agosto de 2026 foi fixada como referência única ao longo de todo o laboratório.
 
-**Não filtrar forks nem repositórios arquivados:** os campos `isFork` e `isArchived` foram coletados para rastreabilidade, mas nenhum filtro foi aplicado na seleção — na amostra final de 1.000 repositórios, 0% são forks e 2,7% (27 repositórios) estão arquivados. O percentual de forks se manteve nulo desde a amostra de 100 (S01), mas o de arquivados não é mais 0% como em S01. Os 27 repositórios arquivados têm mediana de 516,7 dias desde o último push (vs. 2,83 dias nos 972 não arquivados) — ou seja, já fazem parte da cauda de baixa atividade discutida em RQ04 (§4.5, 188 outliers altos). Removê-los da amostra deslocaria a mediana geral de RQ04 de 3,11 para 2,83 dias — uma diferença pequena que não muda a conclusão de que a maioria dos repositórios populares é atualizada com alta frequência, mas mostra que os arquivados são, sim, parte do efeito de cauda já reportado.
+**Não filtrar forks nem repositórios arquivados:** os campos `isFork` e `isArchived` foram coletados para rastreabilidade, mas nenhum filtro foi aplicado na seleção — na amostra final de 1.000 repositórios, 0% são forks e 2,7% (27 repositórios) estão arquivados. O percentual de forks se manteve nulo desde a amostra de 100 (S01), mas o de arquivados não é mais 0% como em S01. Os 27 repositórios arquivados têm mediana de 516,7 dias desde o último push (vs. 2,83 dias nos 972 não arquivados) — ou seja, já fazem parte da cauda de baixa atividade discutida em RQ04 (§4.6, 188 outliers altos). Removê-los da amostra deslocaria a mediana geral de RQ04 de 3,11 para 2,83 dias — uma diferença pequena que não muda a conclusão de que a maioria dos repositórios populares é atualizada com alta frequência, mas mostra que os arquivados são, sim, parte do efeito de cauda já reportado.
 
 **Não filtrar repositórios suspeitos de star-farming:** não há critério objetivo e barato (sem ferramentas de terceiros proibidas pelo enunciado) para separar tração orgânica de estrelas compradas. O achado é documentado e discutido na análise de resultados, sem remover dados da amostra.
 
@@ -345,9 +345,32 @@ Em vez de um script de coleta sequencial com `time.sleep` em caso de rate limit,
 
 ## 4. Resultados
 
-Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S02, sem valores ausentes em nenhuma das métricas desta seção). As visualizações interativas (histogramas, box plots e gráficos de dispersão) referenciadas em cada RQ foram geradas em S03 e estão disponíveis nos arquivos HTML indicados.
+### 4.1 Coleta de Dados
 
-### 4.1 RQ01 — Idade do repositório
+A coleta foi realizada em **agosto de 2026** via API GraphQL do GitHub, cobrindo os **1.000 repositórios com maior número de estrelas**. O volume final analisado por métrica está consolidado abaixo:
+
+| Métrica | N válido | Excluídos | Motivo da exclusão |
+|---|---|---|---|
+| RQ01 — Idade | 1.000 | 0 | — |
+| RQ02 — PRs mergeadas | 1.000 | 0 | — |
+| RQ03 — Releases | 1.000 | 0 | — |
+| RQ04 — Dias desde último push | 999 | 1 | `pushed_at` posterior ao `collected_at` (defasagem de fração de segundo na coleta) |
+| RQ05 — Linguagem primária | 913 | 87 | Repositórios sem linguagem definida (8,7%) — mantidos na amostra, excluídos apenas da contagem por linguagem |
+| RQ06 — Razão de issues fechadas | 957 | 43 | Repositórios sem nenhuma issue registrada — razão matematicamente indefinida |
+| RQ07 — Métricas por linguagem | 13 linguagens (≥10 repos) | — | Linguagens com menos de 10 repositórios excluídas da análise de correlação |
+| RQ08 — Razão forks/estrelas | 1.000 | 0 | — |
+
+**Casos especiais identificados:**
+
+- **27 repositórios arquivados (2,7%):** mantidos na amostra; mediana de dias desde o último push de 516,7 dias (vs. 2,83 dias nos 972 não arquivados). Impacto em RQ04 discutido na seção 4.6.
+- **21 repositórios suspeitos de star-farming (2,1%):** idade < 1,5 anos e > 100 mil estrelas. Mantidos na amostra; analisados separadamente em RQ01 (seção 4.2) e RQ08 (seção 4.4).
+- **280 repositórios sem releases formais (28,0%):** `releases_count = 0`; mantidos na amostra de RQ03, contribuem para a mediana e são discutidos na seção 4.5.
+
+Não foram identificados valores duplicados nem inconsistências entre os campos coletados via GraphQL, conforme validação cruzada com a REST API documentada nos arquivos `docs/validacoes/`.
+
+As visualizações interativas (histogramas, box plots e gráficos de dispersão) referenciadas em cada RQ foram geradas em S03 e estão disponíveis nos arquivos HTML em `docs/visualizacoes/`.
+
+### 4.2 RQ01 — Idade do repositório
 
 | Métrica | Valor |
 |---|---|
@@ -368,7 +391,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Validação dos dados:** na amostra de oito repositórios, `createdAt` coincidiu integralmente entre GraphQL e REST ([validacoes/validacao-rq01-rq02.md](validacoes/validacao-rq01-rq02.md)).
 
-### 4.2 RQ02 — Pull requests aceitas
+### 4.3 RQ02 — Pull requests aceitas
 
 | Métrica | Valor |
 |---|---|
@@ -389,7 +412,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Validação dos dados:** na amostra de oito repositórios, `mergedPullRequests.totalCount` coincidiu integralmente entre GraphQL e a paginação direta da REST API ([validacoes/validacao-rq01-rq02.md](validacoes/validacao-rq01-rq02.md)).
 
-### 4.3 RQ08 — Engajamento real: razão forks/estrelas (bônus)
+### 4.4 RQ08 — Engajamento real: razão forks/estrelas (bônus)
 
 | Métrica | Valor |
 |---|---|
@@ -415,7 +438,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Validação dos dados:** na amostra de oito repositórios, `forkCount` coincidiu integralmente entre GraphQL e `forks_count` da REST API — 8/8 (100%) na execução de 2026-08-15 ([validacoes/validacao-rq08.md](validacoes/validacao-rq08.md)).
 
-### 4.4 RQ03 — Frequência de releases
+### 4.5 RQ03 — Frequência de releases
 
 | Métrica | Valor |
 |---|---|
@@ -436,7 +459,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Nota sobre o critério de confirmação:** diferente das demais RQs desta seção, a hipótese informal de RQ03 (seção 1) não fixou um limiar numérico prévio para "número moderado de releases" — é uma expectativa qualitativa sobre o formato da distribuição (assimétrica, com outliers de versionamento rigoroso e uma cauda de projetos sem releases formais). A confirmação acima é, portanto, um julgamento sobre esse padrão geral, não um teste contra um valor pré-registrado como em RQ01 (mediana > 3 anos) ou RQ06 (mediana > 0,5).
 
-### 4.5 RQ04 — Frequência de atualização
+### 4.6 RQ04 — Frequência de atualização
 
 | Métrica | Valor |
 |---|---|
@@ -459,7 +482,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Validação dos dados:** na amostra de oito repositórios, `releases_count` e `pushed_at` coincidiram integralmente entre GraphQL e REST ([validacoes/validacao-rq03-rq04.md](validacoes/validacao-rq03-rq04.md)). Ainda assim, `pushed_at` mede apenas o último push e não representa a frequência histórica de commits; as conclusões descrevem a amostra em uma data de referência e não estabelecem causalidade.
 
-### 4.6 RQ05 — Linguagens mais populares
+### 4.7 RQ05 — Linguagens mais populares
 
 **N:** 1000 | **Sem linguagem definida:** 87 (8,7%) | **Referência:** TIOBE Index, agosto de 2026
 
@@ -484,7 +507,7 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 **Validação dos dados:** na amostra de oito repositórios, `primaryLanguage` coincidiu integralmente entre GraphQL e REST em todos os casos ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
-### 4.7 RQ06 — Percentual de issues fechadas
+### 4.8 RQ06 — Percentual de issues fechadas
 
 | Métrica | Valor |
 |---|---|
@@ -504,7 +527,7 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 **Validação dos dados:** nas discrepâncias pontuais identificadas (`f/prompts.chat` e `Shubhamsaboo/awesome-llm-apps`), a divergência nas contagens de issues abertas entre GraphQL e REST é atribuída a atividade ocorrida entre as duas coletas — não a erro de coleta ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
-### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização
+### 4.9 RQ07 — Linguagem vs. contribuição, releases e atualização
 
 **Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
 
