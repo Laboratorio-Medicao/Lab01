@@ -11,7 +11,7 @@ from src.storage import get_connection
 
 DEFAULT_TOP_LANGUAGES = 10
 DEFAULT_MIN_REPOS = 10
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analise-rq07.md"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-rq07.md"
 
 
 @dataclass
@@ -23,8 +23,16 @@ class LanguageStats:
     median_days_since_push: float
 
 
-def _days_since_push(pushed_at: str, reference: datetime) -> float:
+def _days_since_push(pushed_at: str, collected_at: str) -> float:
+    """Dias entre `pushed_at` e `collected_at` — a referência de "hoje" fixada
+
+    no momento em que aquela linha foi coletada, não o instante em que este
+    script é executado. Mesmo critério de reprodutibilidade documentado em
+    `docs/metodologia.md` para RQ01 (idade): cada linha carrega sua própria
+    referência temporal.
+    """
     dt = datetime.fromisoformat(pushed_at.replace("Z", "+00:00"))
+    reference = datetime.strptime(collected_at, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     return (reference - dt).total_seconds() / 86400
 
 
@@ -32,7 +40,7 @@ def fetch_all_repos(connection):
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
-            SELECT primary_language, merged_pull_requests, releases_count, pushed_at
+            SELECT primary_language, merged_pull_requests, releases_count, pushed_at, collected_at
             FROM {storage.REPOSITORIES_TABLE}
             WHERE primary_language IS NOT NULL
               AND primary_language != ''
@@ -44,12 +52,12 @@ def fetch_all_repos(connection):
         return cursor.fetchall()
 
 
-def compute_language_stats(rows, top_n, min_repos, reference_date):
+def compute_language_stats(rows, top_n, min_repos):
     from collections import defaultdict
 
     buckets: dict[str, list[tuple]] = defaultdict(list)
-    for language, prs, releases, pushed_at in rows:
-        buckets[language].append((prs, releases, pushed_at))
+    for language, prs, releases, pushed_at, collected_at in rows:
+        buckets[language].append((prs, releases, pushed_at, collected_at))
 
     stats = []
     for language, entries in buckets.items():
@@ -57,7 +65,7 @@ def compute_language_stats(rows, top_n, min_repos, reference_date):
             continue
         prs_list = [e[0] for e in entries]
         releases_list = [e[1] for e in entries]
-        days_list = [_days_since_push(e[2], reference_date) for e in entries]
+        days_list = [_days_since_push(e[2], e[3]) for e in entries]
         stats.append(LanguageStats(
             language=language,
             repo_count=len(entries),
@@ -163,7 +171,6 @@ def build_arg_parser():
 def main():
     args = build_arg_parser().parse_args()
     connection = get_connection()
-    reference_date = datetime.now(tz=timezone.utc)
 
     try:
         rows = fetch_all_repos(connection)
@@ -173,8 +180,7 @@ def main():
     if not rows:
         raise RuntimeError("nenhum repositório encontrado — rode o coletor antes")
 
-    stats = compute_language_stats(rows, top_n=args.top, min_repos=args.min_repos,
-                                   reference_date=reference_date)
+    stats = compute_language_stats(rows, top_n=args.top, min_repos=args.min_repos)
 
     if not stats:
         raise RuntimeError(

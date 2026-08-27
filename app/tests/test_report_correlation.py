@@ -1,12 +1,7 @@
-from datetime import datetime, timezone
-
 import plotly.graph_objects as go
 
 from analysis.correlation import build_metric_values, compute_correlations
 from analysis.report_correlation import build_heatmap, render_html, render_markdown
-
-
-REFERENCE_DATE = datetime(2026, 8, 25, tzinfo=timezone.utc)
 
 
 def _result():
@@ -16,6 +11,7 @@ def _result():
             "fork_count": 2,
             "created_at": "2026-08-01T00:00:00Z",
             "pushed_at": "2026-08-24T00:00:00Z",
+            "collected_at": "2026-08-25 00:00:00",
             "is_fork": 0,
             "is_archived": 0,
             "merged_pull_requests": 5,
@@ -28,6 +24,7 @@ def _result():
             "fork_count": 4,
             "created_at": "2026-07-01T00:00:00Z",
             "pushed_at": "2026-08-20T00:00:00Z",
+            "collected_at": "2026-08-25 00:00:00",
             "is_fork": 0,
             "is_archived": 0,
             "merged_pull_requests": 10,
@@ -36,7 +33,7 @@ def _result():
             "closed_issues": 6,
         },
     ]
-    return compute_correlations(build_metric_values(rows, REFERENCE_DATE))
+    return compute_correlations(build_metric_values(rows))
 
 
 def test_build_heatmap_returns_figure_with_expected_dimensions():

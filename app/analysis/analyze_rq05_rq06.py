@@ -11,7 +11,7 @@ from src.metrics import compute_closed_issues_ratio
 from src.storage import get_connection
 
 OUTPUT_PATH = (
-    Path(__file__).resolve().parent.parent.parent / "docs" / "analise-exploratoria-rq05-rq06.md"
+    Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-exploratoria-rq05-rq06.md"
 )
 
 _TIOBE_TOP_20 = {

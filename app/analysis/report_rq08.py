@@ -15,7 +15,7 @@ from analysis.analyze_rq08 import (
 from src.metrics import compute_age_years, compute_fork_star_ratio
 from src.storage import get_connection
 
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "report-rq08.html"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "visualizacoes" / "report-rq08.html"
 
 _RATIO_COLOR = "#9467bd"
 _FARMING_COLOR = "#d62728"

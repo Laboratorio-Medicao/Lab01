@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-from datetime import datetime, timezone
 from pathlib import Path
 
 import plotly.graph_objects as go
@@ -18,10 +17,10 @@ from analysis.correlation import (
 from src import storage
 from src.storage import get_connection
 
-OUTPUT_MARKDOWN = Path(__file__).resolve().parent.parent.parent / "docs" / "analise-correlacao.md"
-OUTPUT_HTML = Path(__file__).resolve().parent.parent.parent / "docs" / "report-correlacao.html"
-OUTPUT_SPEARMAN_CSV = Path(__file__).resolve().parent.parent.parent / "docs" / "correlacao-spearman.csv"
-OUTPUT_PEARSON_CSV = Path(__file__).resolve().parent.parent.parent / "docs" / "correlacao-pearson.csv"
+OUTPUT_MARKDOWN = Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-correlacao.md"
+OUTPUT_HTML = Path(__file__).resolve().parent.parent.parent / "docs" / "visualizacoes" / "report-correlacao.html"
+OUTPUT_SPEARMAN_CSV = Path(__file__).resolve().parent.parent.parent / "docs" / "dados" / "correlacao-spearman.csv"
+OUTPUT_PEARSON_CSV = Path(__file__).resolve().parent.parent.parent / "docs" / "dados" / "correlacao-pearson.csv"
 
 
 def build_heatmap(result: CorrelationResult, method: str = "spearman") -> go.Figure:
@@ -137,7 +136,7 @@ def render_html(result: CorrelationResult) -> str:
 def _fetch_rows(connection) -> list[dict]:
     columns = (
         "stargazer_count, fork_count, created_at, pushed_at, is_fork, is_archived, "
-        "merged_pull_requests, releases_count, open_issues, closed_issues"
+        "merged_pull_requests, releases_count, open_issues, closed_issues, collected_at"
     )
     with connection.cursor() as cursor:
         cursor.execute(f"SELECT {columns} FROM {storage.REPOSITORIES_TABLE}")
@@ -159,8 +158,7 @@ def main() -> None:
     if not rows:
         raise RuntimeError("nenhum repositório encontrado — rode o coletor antes")
 
-    reference_date = datetime.now(tz=timezone.utc)
-    result = compute_correlations(build_metric_values(rows, reference_date))
+    result = compute_correlations(build_metric_values(rows))
     markdown = render_markdown(result)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

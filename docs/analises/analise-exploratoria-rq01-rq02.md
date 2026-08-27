@@ -2,7 +2,7 @@
 
 **Total de repositórios na amostra:** 1000
 
-**Escopo:** validação estatística de consistência (distribuição, outliers, valores ausentes) sobre a totalidade dos 1.000 repositórios coletados — distinta da validação cruzada campo-a-campo contra a REST API já feita em S01 (`docs/validacao-rq01-rq02.md`, amostra de 8 repositórios). Ver `docs/fonte-da-verdade-s02.md`, seção 8.1.
+**Escopo:** validação estatística de consistência (distribuição, outliers, valores ausentes) sobre a totalidade dos 1.000 repositórios coletados — distinta da validação cruzada campo-a-campo contra a REST API já feita em S01 (`docs/validacoes/validacao-rq01-rq02.md`, amostra de 8 repositórios). Ver `docs/metodologia.md`, seção "RQ01 — Idade do repositório" e "RQ02 — Pull requests aceitas".
 
 ## RQ01 — Idade do repositório (anos) (created_at)
 

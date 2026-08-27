@@ -2,7 +2,7 @@
 
 Laboratório 01 da disciplina **Laboratório de Experimentação de Software** — Engenharia de Software, 6º período.
 
-O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo seis questões de pesquisa sobre maturidade, contribuição, frequência de releases, atualização, linguagem e qualidade de issues — mais uma questão bônus (RQ07, do enunciado).
+O objetivo é coletar e analisar dados dos **1.000 repositórios com maior número de estrelas no GitHub**, respondendo às 7 questões de pesquisa obrigatórias do enunciado (RQ01–RQ07) sobre maturidade, contribuição, frequência de releases, atualização, linguagem, qualidade de issues e linguagem vs. contribuição — mais uma questão bônus proposta pelo próprio grupo (RQ08, razão forks/estrelas).
 
 ---
 
@@ -16,9 +16,10 @@ O objetivo é coletar e analisar dados dos **1.000 repositórios com maior núme
 | RQ04 | Sistemas populares são atualizados com frequência? | Tempo desde a última atualização |
 | RQ05 | Sistemas populares são escritos nas linguagens mais populares? | Linguagem primária de cada repositório |
 | RQ06 | Sistemas populares possuem alto percentual de issues fechadas? | Razão entre issues fechadas e total de issues |
-| RQ07 ⭐ | Sistemas em linguagens populares recebem mais contribuição, releases e atualizações? | RQ02, RQ03 e RQ04 segmentados por linguagem |
+| RQ07 | Sistemas em linguagens populares recebem mais contribuição, releases e atualizações? | RQ02, RQ03 e RQ04 segmentados por linguagem |
+| RQ08 ⭐ (bônus, inovação do grupo) | Repositórios populares refletem engajamento real (forks) ou popularidade passiva (estrelas)? | Razão forks/estrelas (`fork_count / stargazer_count`) |
 
-A referência adotada para "linguagens mais populares" é o **GitHub Octoverse** (fonte: octoverse.github.com), mantida ao longo de todo o laboratório.
+A referência adotada para "linguagens mais populares" é o **TIOBE Index** (tiobe.com/tiobe-index), edição de agosto de 2026, mantida ao longo de todo o laboratório — a mesma fonte usada em `docs/relatorio.md` e `docs/metodologia.md`.
 
 ---
 
@@ -110,31 +111,35 @@ python -m src.collector --per-page 25 --total 1000  # S02: 1.000 repos (paginaç
 # Exemplo da S02: exige exatamente 1.000 registros sem duplicatas de id.
 
 # Validação cruzada RQ01/RQ02 contra a API REST do GitHub (Issue #4)
-# gera docs/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
+# gera docs/validacoes/validacao-rq01-rq02.md — decisões metodológicas em docs/metodologia.md
 python -m src.validate_rq01_rq02 --sample-size 8
 
 # Validação cruzada RQ03/RQ04 contra a API REST do GitHub
-# gera docs/validacao-rq03-rq04.md
+# gera docs/validacoes/validacao-rq03-rq04.md
 python -m src.validate_rq03_rq04 --sample-size 8
 
 # Validação cruzada RQ05/RQ06 contra a API REST do GitHub (Issue #6)
-# gera docs/validacao-rq05-rq06.md
+# gera docs/validacoes/validacao-rq05-rq06.md
 python -m src.validate_rq05_rq06 --sample-size 8
 
 # Validação cruzada RQ08 (bônus) — fork_count contra a API REST do GitHub
-# gera docs/validacao-rq08.md — decisão metodológica em docs/metodologia.md
+# gera docs/validacoes/validacao-rq08.md — decisão metodológica em docs/metodologia.md
 python -m src.validate_rq08 --sample-size 8
 
 # Export para CSV (lê do Postgres, grava data/repos.csv)
 python -m src.export
 
-# Análise por RQ01/RQ02 — AINDA NÃO IMPLEMENTADO
-# (analysis/rq01_02.py não existe neste repositório ainda; planejado para S03,
-# junto com o restante da análise estatística/visualizações)
-# python analysis/rq01_02.py
+# Análise RQ01/RQ02 (1.000 repositórios completos) — estatística descritiva,
+# ausentes, outliers e hipótese informal
+# gera docs/analises/analise-exploratoria-rq01-rq02.md
+python -m analysis.analyze_rq01_rq02
+
+# Relatório HTML interativo com gráficos de RQ01/RQ02 (idade e PRs aceitas)
+# gera docs/visualizacoes/report-rq01-rq02.html
+python -m analysis.report_rq01_rq02
 
 # Análise exploratória RQ03/RQ04 (1.000 repositórios completos da S02)
-# gera docs/analise-rq03-rq04.md com estatística descritiva, ausentes,
+# gera docs/analises/analise-rq03-rq04.md com estatística descritiva, ausentes,
 # outliers, sanidade da distribuição e hipótese informal
 python -m analysis.analyze_rq03_rq04
 
@@ -148,19 +153,19 @@ python -m analysis.report_correlation
 # (rodar "python analysis/analyze_rq07.py" direto falha com
 # ModuleNotFoundError: No module named 'src', pois o diretório do script não
 # tem app/ no sys.path — use -m a partir de app/)
-# gera docs/analise-rq07.md
+# gera docs/analises/analise-rq07.md
 python -m analysis.analyze_rq07
 
 # Análise RQ08 (bônus) — distribuição, outliers e valores ausentes de
 # fork_star_ratio sobre os 1.000 repositórios, confrontando a hipótese
 # informal de star-farming registrada em docs/metodologia.md
-# gera docs/analise-rq08.md
+# gera docs/analises/analise-rq08.md
 python -m analysis.analyze_rq08
 
-# Dashboard interativo — AINDA NÃO IMPLEMENTADO
-# (dashboard/generate.py não existe neste repositório ainda; planejado para S03)
-# python dashboard/generate.py
-# → abriria output/dashboard.html
+# Dashboard interativo — todas as RQs (KPIs, gráficos e tabela pesquisável
+# dos 1.000 repositórios) em uma única página com abas
+# gera docs/visualizacoes/dashboard.html
+python -m analysis.report_dashboard
 
 # Snapshot do Kanban (grava kanban/snapshots/kanban-snapshot-YYYY-MM-DD.csv)
 # Requer GITHUB_TOKEN com acesso à organização Laboratorio-Medicao.
@@ -203,6 +208,6 @@ O grupo utiliza um **GitHub Projects v2** com o seguinte board Kanban:
 
 ## Links
 
-- **Repositório:** https://github.com/Laboratorio-Medicao/Lab01-v2
-- **GitHub Projects (Kanban):** `<preencher após criação>`
-- **Relatório Final:** `<preencher após entrega>`
+- **Repositório:** https://github.com/Laboratorio-Medicao/Lab01
+- **GitHub Projects (Kanban):** https://github.com/orgs/Laboratorio-Medicao/projects/1
+- **Relatório Final:** [docs/relatorio.md](docs/relatorio.md)

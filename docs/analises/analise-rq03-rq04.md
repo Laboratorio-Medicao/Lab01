@@ -1,14 +1,14 @@
 # Análise Exploratória — RQ03 e RQ04 (1000 repositórios)
 
 Esta análise usa os dados completos da coleta (S02), sem nova validação REST amostral.
-Data de referência para RQ04: 2026-08-19T23:01:10.338779+00:00
+Referência para RQ04: `collected_at` de cada repositório (não a data de execução deste script) — garante reprodutibilidade, mesmo critério já usado em RQ01.
 
 ## Sumário Estatístico
 
 | Métrica | N válido | Média | Mediana | Mín | Q1 | Q3 | Máx | IQR |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `releases_count` (RQ03) | 1000 | 127.35 | 39.50 | 0.00 | 0.00 | 148.25 | 1000.00 | 148.25 |
-| `dias_desde_ultimo_push` (RQ04) | 1000 | 116.36 | 5.87 | 2.46 | 2.71 | 52.50 | 2451.77 | 49.79 |
+| `dias_desde_ultimo_push` (RQ04) | 999 | 113.86 | 3.11 | 0.00 | 0.19 | 50.98 | 2449.31 | 50.79 |
 
 ## Valores Ausentes e Qualidade dos Campos
 
@@ -16,14 +16,14 @@ Data de referência para RQ04: 2026-08-19T23:01:10.338779+00:00
 - `releases_count` ausente: 0 (0.00%)
 - `pushed_at` ausente/vazio: 0 (0.00%)
 - `pushed_at` inválido: 0 (0.00%)
-- `pushed_at` no futuro: 0 (0.00%)
+- `pushed_at` no futuro: 1 (0.10%)
 
 ## Outliers (Regra IQR)
 
 | Campo | Limite inferior | Limite superior | Qtde de outliers | % do total válido |
 |---|---:|---:|---:|---:|
 | `releases_count` | -222.38 | 370.62 | 94 | 9.40% |
-| `dias_desde_ultimo_push` | -71.98 | 127.19 | 190 | 19.00% |
+| `dias_desde_ultimo_push` | -75.99 | 127.17 | 188 | 18.82% |
 
 ## Sanidade da Distribuição
 

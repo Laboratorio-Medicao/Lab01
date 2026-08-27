@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import pytest
 
 from analysis.analyze_rq03_rq04 import (
@@ -40,17 +38,19 @@ def test_compute_outlier_summary_detects_high_tail_values():
 
 
 def test_run_analysis_tracks_missing_invalid_future_and_zero_releases():
-    reference = datetime(2026, 8, 17, tzinfo=timezone.utc)
+    # `collected_at` é a referência de "hoje" de cada linha (não um único
+    # `reference_date` global) — mesmo padrão de RQ01, para reprodutibilidade.
+    collected_at = "2026-08-17 00:00:00"
     rows = [
-        (0, "2026-08-16T00:00:00Z"),
-        (10, "2026-08-10T00:00:00Z"),
-        (None, "2026-08-01T00:00:00Z"),
-        (3, None),
-        (7, "invalido"),
-        (5, "2026-08-30T00:00:00Z"),
+        (0, "2026-08-16T00:00:00Z", collected_at),
+        (10, "2026-08-10T00:00:00Z", collected_at),
+        (None, "2026-08-01T00:00:00Z", collected_at),
+        (3, None, collected_at),
+        (7, "invalido", collected_at),
+        (5, "2026-08-30T00:00:00Z", collected_at),
     ]
 
-    result = run_analysis(rows, reference)
+    result = run_analysis(rows)
 
     assert result.total_rows == 6
     assert result.releases_missing == 1

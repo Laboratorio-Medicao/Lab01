@@ -189,7 +189,7 @@ Na amostra atual, `is_archived = 1` em **0** repositórios.
   commits chegam por outro fluxo) foi confirmado como zero real, não como
   nulo mascarado.
 
-## Validação cruzada (evidência em `docs/validacao-rq01-rq02.md`)
+## Validação cruzada (evidência em `docs/validacoes/validacao-rq01-rq02.md`)
 
 O script `app/src/validate_rq01_rq02.py` cruza os dados coletados via GraphQL
 com a API REST do GitHub para uma amostra de 8 repositórios:
@@ -218,7 +218,7 @@ Duas observações técnicas relevantes encontradas durante a validação:
 
 Resultado: nos 8 repositórios validados com sucesso, `createdAt` e
 `mergedPullRequests` bateram 100% com a REST API (ver tabela em
-`docs/validacao-rq01-rq02.md`).
+`docs/validacoes/validacao-rq01-rq02.md`).
 
 ## RQ03/RQ04 — Releases e última atualização
 
@@ -248,7 +248,7 @@ mesmo padrão dos validadores de RQ01/RQ02 e RQ05/RQ06.
 antes de aplicar `--sample-size`. Antes dessa correção, a consulta ordenava
 tudo por `releases_count ASC`, então a amostra de 8 acabava sendo **100%
 repositórios com 0 releases** — o que nunca provava que a contagem bate para
-um valor diferente de zero. Ver `docs/validacao-rq03-rq04.md` para a tabela
+um valor diferente de zero. Ver `docs/validacoes/validacao-rq03-rq04.md` para a tabela
 atual, que já mistura os dois casos.
 
 **Nota sobre divergências esperadas em `pushed_at`:** como a validação roda
@@ -312,7 +312,7 @@ aberta para fechada).
 ## RQ07 (bônus) — Linguagem vs. contribuição, releases e atualização
 
 **Implementação:** `app/analysis/analyze_rq07.py`, gera
-`docs/analise-rq07.md`. Agrupa os repositórios por `primary_language`,
+`docs/analises/analise-rq07.md`. Agrupa os repositórios por `primary_language`,
 calcula a mediana de PRs mergeadas (RQ02), releases (RQ03) e dias desde o
 último push (RQ04) por linguagem, e mede a correlação de Spearman entre um
 ranking de popularidade de linguagem e cada uma dessas três medianas.
@@ -336,7 +336,7 @@ não popularidade da linguagem no ecossistema em geral — são conceitos
 relacionados, mas não idênticos, e podem divergir do ranking do TIOBE
 (ex.: uma linguagem pode ser muito usada em repositórios de alto destaque no
 GitHub sem estar entre as mais populares do TIOBE, ou vice-versa). Por
-isso o texto gerado em `docs/analise-rq07.md` chama a métrica explicitamente
+isso o texto gerado em `docs/analises/analise-rq07.md` chama a métrica explicitamente
 de "proxy de popularidade", e o Relatório Final deve deixar claro, ao
 apresentar a RQ07, que a definição de "popular" usada ali não é a mesma
 fonte externa citada na RQ05 — para não parecer inconsistência não
@@ -386,7 +386,7 @@ traduzem em forks, enquanto adoção orgânica gera ambos proporcionalmente.
 Esta é uma expectativa a confrontar com os dados reais, não uma conclusão.
 
 **Validação cruzada (`app/src/validate_rq08.py`, evidência em
-`docs/validacao-rq08.md`):** segue o mesmo padrão dos demais validadores —
+`docs/validacoes/validacao-rq08.md`):** segue o mesmo padrão dos demais validadores —
 `fork_count` (coletado via GraphQL) é conferido contra `forks_count` da REST
 API (`GET /repos/{owner}/{repo}`) para uma amostra de 8 repositórios,
 intercalando candidatos com `fork_count = 0` e `fork_count > 0` (mesma lógica

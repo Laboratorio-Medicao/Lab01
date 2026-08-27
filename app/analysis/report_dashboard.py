@@ -16,9 +16,9 @@ from analysis.correlation import METRIC_LABELS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_PATH = REPO_ROOT / "app" / "data" / "repos.csv"
-SPEARMAN_CSV = REPO_ROOT / "docs" / "correlacao-spearman.csv"
-PEARSON_CSV = REPO_ROOT / "docs" / "correlacao-pearson.csv"
-OUTPUT_PATH = REPO_ROOT / "docs" / "dashboard.html"
+SPEARMAN_CSV = REPO_ROOT / "docs" / "dados" / "correlacao-spearman.csv"
+PEARSON_CSV = REPO_ROOT / "docs" / "dados" / "correlacao-pearson.csv"
+OUTPUT_PATH = REPO_ROOT / "docs" / "visualizacoes" / "dashboard.html"
 
 STAR_FARMING_AGE_YEARS = 1.5
 STAR_FARMING_STARGAZERS = 100_000

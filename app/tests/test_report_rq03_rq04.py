@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import plotly.graph_objects as go
 
 from analysis.analyze_rq03_rq04 import run_analysis
@@ -13,16 +11,18 @@ from analysis.report_rq03_rq04 import (
 )
 
 
-REFERENCE_DATE = datetime(2026, 8, 25, tzinfo=timezone.utc)
+# `collected_at` é a referência de "hoje" de cada linha (não um único
+# `reference_date` global) — mesmo padrão de RQ01, para reprodutibilidade.
+COLLECTED_AT = "2026-08-25 00:00:00"
 ROWS = [
-    (0, "2026-08-24T00:00:00Z"),
-    (10, "2026-08-20T00:00:00Z"),
-    (100, "2026-07-25T00:00:00Z"),
+    (0, "2026-08-24T00:00:00Z", COLLECTED_AT),
+    (10, "2026-08-20T00:00:00Z", COLLECTED_AT),
+    (100, "2026-07-25T00:00:00Z", COLLECTED_AT),
 ]
 
 
 def _result():
-    return run_analysis(ROWS, REFERENCE_DATE)
+    return run_analysis(ROWS)
 
 
 def test_rq03_figures_are_plotly_figures():

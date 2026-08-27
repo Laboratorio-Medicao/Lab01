@@ -17,7 +17,7 @@ from analysis.analyze_rq03_rq04 import (
 from src import storage
 from src.storage import get_connection
 
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "report-rq03-rq04.html"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "visualizacoes" / "report-rq03-rq04.html"
 
 _RELEASES_COLOR = "#1f77b4"
 _DAYS_COLOR = "#ff7f0e"
@@ -153,7 +153,15 @@ def build_fig_rq03_rq04_scatter(
     return fig
 
 
-def _valid_values(rows: list[dict], reference_date: datetime) -> tuple[list[float], list[float]]:
+def _row_reference_date(row: dict) -> datetime:
+    """`collected_at` da própria linha — referência fixa de "hoje" usada para
+
+    RQ04, não o instante em que este script roda (mesmo critério de
+    reprodutibilidade de RQ01, documentado em `docs/metodologia.md`)."""
+    return datetime.strptime(str(row["collected_at"]), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+
+def _valid_values(rows: list[dict]) -> tuple[list[float], list[float]]:
     releases = []
     days_since_push = []
     for row in rows:
@@ -166,13 +174,13 @@ def _valid_values(rows: list[dict], reference_date: datetime) -> tuple[list[floa
             pushed_at_dt = parse_iso_utc(str(pushed_at))
         except ValueError:
             continue
-        delta_days = (reference_date - pushed_at_dt).total_seconds() / 86400
+        delta_days = (_row_reference_date(row) - pushed_at_dt).total_seconds() / 86400
         if delta_days >= 0:
             days_since_push.append(delta_days)
     return releases, days_since_push
 
 
-def _scatter_points(rows: list[dict], reference_date: datetime) -> list[tuple[str, float, float]]:
+def _scatter_points(rows: list[dict]) -> list[tuple[str, float, float]]:
     points = []
     for row in rows:
         if row["releases_count"] is None:
@@ -184,7 +192,7 @@ def _scatter_points(rows: list[dict], reference_date: datetime) -> list[tuple[st
             pushed_at_dt = parse_iso_utc(str(pushed_at))
         except ValueError:
             continue
-        delta_days = (reference_date - pushed_at_dt).total_seconds() / 86400
+        delta_days = (_row_reference_date(row) - pushed_at_dt).total_seconds() / 86400
         if delta_days < 0:
             continue
         points.append((
@@ -264,7 +272,7 @@ def render_html(
 def _fetch_report_rows(connection) -> list[dict]:
     with connection.cursor() as cursor:
         cursor.execute(
-            f"SELECT owner, name, releases_count, pushed_at FROM {storage.REPOSITORIES_TABLE}"
+            f"SELECT owner, name, releases_count, pushed_at, collected_at FROM {storage.REPOSITORIES_TABLE}"
         )
         columns = [description[0] for description in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -278,11 +286,10 @@ def main() -> None:
         "--output",
         type=Path,
         default=OUTPUT_PATH,
-        help="caminho do HTML de saída (padrão: docs/report-rq03-rq04.html)",
+        help="caminho do HTML de saída (padrão: docs/visualizacoes/report-rq03-rq04.html)",
     )
     args = parser.parse_args()
 
-    reference_date = datetime.now(tz=timezone.utc)
     connection = get_connection()
     try:
         rows = _fetch_report_rows(connection)
@@ -294,9 +301,9 @@ def main() -> None:
         raise RuntimeError("nenhum repositório encontrado — rode o coletor antes")
     validate_total_rows(len(rows))
 
-    result = run_analysis(analysis_rows, reference_date)
-    releases, days_since_push = _valid_values(rows, reference_date)
-    points = _scatter_points(rows, reference_date)
+    result = run_analysis(analysis_rows)
+    releases, days_since_push = _valid_values(rows)
+    points = _scatter_points(rows)
     html = render_html(result, releases, days_since_push, points)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

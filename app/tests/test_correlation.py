@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import pytest
 
 from analysis.correlation import (
@@ -10,15 +8,13 @@ from analysis.correlation import (
 )
 
 
-REFERENCE_DATE = datetime(2026, 8, 25, tzinfo=timezone.utc)
-
-
 def _row(**overrides):
     row = {
         "stargazer_count": 10,
         "fork_count": 2,
         "created_at": "2026-08-01T00:00:00Z",
         "pushed_at": "2026-08-24T00:00:00Z",
+        "collected_at": "2026-08-25 00:00:00",
         "is_fork": 0,
         "is_archived": 0,
         "merged_pull_requests": 5,
@@ -31,7 +27,7 @@ def _row(**overrides):
 
 
 def test_build_metric_values_includes_original_and_derived_metrics():
-    values = build_metric_values([_row()], REFERENCE_DATE)
+    values = build_metric_values([_row()])
 
     assert tuple(values) == METRIC_NAMES
     assert values["idade_anos"][0] == pytest.approx(24 / 365.25)

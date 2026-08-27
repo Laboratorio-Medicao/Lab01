@@ -10,7 +10,7 @@ from src.storage import get_connection
 DEFAULT_SAMPLE_SIZE = 8
 CANDIDATE_POOL_MULTIPLIER = 3
 MIN_SAMPLE_SIZE = 5
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validacao-rq01-rq02.md"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "validacoes" / "validacao-rq01-rq02.md"
 
 
 class InsufficientSampleError(RuntimeError):

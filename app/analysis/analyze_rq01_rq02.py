@@ -10,7 +10,7 @@ from src.metrics import compute_age_years
 from src.storage import get_connection
 
 OUTPUT_PATH = (
-    Path(__file__).resolve().parent.parent.parent / "docs" / "analise-exploratoria-rq01-rq02.md"
+    Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-exploratoria-rq01-rq02.md"
 )
 
 STAR_FARMING_AGE_YEARS = 1.5
@@ -151,8 +151,9 @@ def render_markdown(
         "**Escopo:** validação estatística de consistência (distribuição, outliers, "
         "valores ausentes) sobre a totalidade dos 1.000 repositórios coletados — "
         "distinta da validação cruzada campo-a-campo contra a REST API já feita em "
-        "S01 (`docs/validacao-rq01-rq02.md`, amostra de 8 repositórios). Ver "
-        "`docs/fonte-da-verdade-s02.md`, seção 8.1.\n",
+        "S01 (`docs/validacoes/validacao-rq01-rq02.md`, amostra de 8 repositórios). Ver "
+        "`docs/metodologia.md`, seção \"RQ01 — Idade do repositório\" e "
+        "\"RQ02 — Pull requests aceitas\".\n",
     ]
     lines += render_field_section("RQ01 — Idade do repositório (anos)", "created_at", age_summary)
     lines += render_field_section(

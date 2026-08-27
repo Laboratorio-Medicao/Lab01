@@ -56,6 +56,10 @@ def _parse_datetime(value: str) -> datetime:
     return parsed
 
 
+def _parse_collected_at(value: str) -> datetime:
+    return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+
 def _date_metric(value: str | None, reference_date: datetime, divisor: float) -> float | None:
     if not value:
         return None
@@ -68,7 +72,13 @@ def _date_metric(value: str | None, reference_date: datetime, divisor: float) ->
     return delta / divisor
 
 
-def build_metric_values(rows: list[dict], reference_date: datetime) -> dict[str, list[float | None]]:
+def build_metric_values(rows: list[dict]) -> dict[str, list[float | None]]:
+    """`idade_anos` e `dias_desde_ultimo_push` usam `collected_at` de cada linha
+
+    como referência de "hoje" — não o instante em que este script roda —, mesmo
+    critério de reprodutibilidade já documentado em `docs/metodologia.md` para
+    RQ01: cada linha carrega sua própria referência temporal.
+    """
     values = {metric: [] for metric in METRIC_NAMES}
     for row in rows:
         for metric in (
@@ -78,8 +88,10 @@ def build_metric_values(rows: list[dict], reference_date: datetime) -> dict[str,
             raw_value = row.get(metric)
             values[metric].append(float(raw_value) if raw_value is not None else None)
 
-        age = _date_metric(row.get("created_at"), reference_date, 365.25)
-        days = _date_metric(row.get("pushed_at"), reference_date, 1)
+        collected_at = row.get("collected_at")
+        reference_date = _parse_collected_at(str(collected_at)) if collected_at else None
+        age = _date_metric(row.get("created_at"), reference_date, 365.25) if reference_date else None
+        days = _date_metric(row.get("pushed_at"), reference_date, 1) if reference_date else None
         values["idade_anos"].append(age)
         values["dias_desde_ultimo_push"].append(days)
 

@@ -21,7 +21,7 @@ from analysis.analyze_rq07 import (
 from src.storage import get_connection
 
 OUTPUT_PATH = (
-    Path(__file__).resolve().parent.parent.parent / "docs" / "report-rq05-rq06-rq07.html"
+    Path(__file__).resolve().parent.parent.parent / "docs" / "visualizacoes" / "report-rq05-rq06-rq07.html"
 )
 
 _TIOBE_COLOR = "#1f77b4"
@@ -258,14 +258,12 @@ def render_html(
 
 def main() -> None:
     import argparse
-    from datetime import datetime, timezone
 
     argparse.ArgumentParser(
         description="Gera relatório HTML com visualizações RQ05/RQ06/RQ07."
     ).parse_args()
 
     connection = get_connection()
-    reference_date = datetime.now(tz=timezone.utc)
     try:
         rows_0506 = fetch_rows_0506(connection)
         rows_07 = fetch_all_repos(connection)
@@ -282,7 +280,6 @@ def main() -> None:
     from analysis.analyze_rq07 import DEFAULT_MIN_REPOS, DEFAULT_TOP_LANGUAGES
     rq07_stats = compute_language_stats_07(
         rows_07, top_n=DEFAULT_TOP_LANGUAGES, min_repos=DEFAULT_MIN_REPOS,
-        reference_date=reference_date,
     )
 
     html = render_html(lang_stats, ratio_stats, ratios, rq07_stats)

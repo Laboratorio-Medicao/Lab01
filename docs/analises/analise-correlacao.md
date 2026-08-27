@@ -31,9 +31,9 @@ Métrica | Descrição
 | `releases_count` | `closed_issues` | 0.710 | 1000 |
 | `releases_count` | `issues_total` | 0.697 | 1000 |
 | `open_issues` | `issues_total` | 0.688 | 1000 |
+| `merged_pull_requests` | `dias_desde_ultimo_push` | -0.614 | 999 |
 | `stargazer_count` | `fork_count` | 0.611 | 1000 |
 | `merged_pull_requests` | `releases_count` | 0.609 | 1000 |
-| `open_issues` | `closed_issues` | 0.605 | 1000 |
 
 ## Interpretação
 

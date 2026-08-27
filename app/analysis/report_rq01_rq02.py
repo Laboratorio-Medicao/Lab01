@@ -17,7 +17,7 @@ from src.metrics import compute_age_years
 from src.storage import get_connection
 
 OUTPUT_PATH = (
-    Path(__file__).resolve().parent.parent.parent / "docs" / "report-rq01-rq02.html"
+    Path(__file__).resolve().parent.parent.parent / "docs" / "visualizacoes" / "report-rq01-rq02.html"
 )
 
 _RQ01_COLOR = "#1f77b4"

@@ -10,7 +10,7 @@ from pathlib import Path
 from src import storage
 from src.storage import get_connection
 
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analise-rq03-rq04.md"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-rq03-rq04.md"
 EXPECTED_TOTAL_ROWS = 1000
 
 
@@ -100,11 +100,15 @@ def parse_iso_utc(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def parse_collected_at(value: str) -> datetime:
+    return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+
 def fetch_rows(connection):
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
-            SELECT releases_count, pushed_at
+            SELECT releases_count, pushed_at, collected_at
             FROM {storage.REPOSITORIES_TABLE}
             """
         )
@@ -119,7 +123,15 @@ def validate_total_rows(total_rows: int, expected_total: int = EXPECTED_TOTAL_RO
         )
 
 
-def run_analysis(rows, reference_date: datetime) -> RQ03RQ04Analysis:
+def run_analysis(rows) -> RQ03RQ04Analysis:
+    """Calcula RQ03/RQ04 sobre `rows` de (releases_count, pushed_at, collected_at).
+
+    RQ04 usa `collected_at` de cada linha como referência de "hoje" — não o
+    instante em que este script é executado — pelo mesmo motivo já registrado
+    em `docs/metodologia.md` para RQ01 (idade): garante que o resultado seja
+    reproduzível independente de quando a análise é rodada, já que cada linha
+    carrega sua própria referência temporal (fixada no momento da coleta).
+    """
     releases_values: list[float] = []
     days_since_push_values: list[float] = []
 
@@ -130,7 +142,7 @@ def run_analysis(rows, reference_date: datetime) -> RQ03RQ04Analysis:
     zero_releases_count = 0
     very_old_push_count = 0
 
-    for releases_count, pushed_at in rows:
+    for releases_count, pushed_at, collected_at in rows:
         if releases_count is None:
             releases_missing += 1
         else:
@@ -149,6 +161,7 @@ def run_analysis(rows, reference_date: datetime) -> RQ03RQ04Analysis:
             pushed_at_invalid += 1
             continue
 
+        reference_date = parse_collected_at(str(collected_at))
         delta_days = (reference_date - pushed_at_dt).total_seconds() / 86400
         if delta_days < 0:
             pushed_at_future += 1
@@ -208,14 +221,15 @@ def build_hypothesis_block() -> str:
     )
 
 
-def render_markdown(result: RQ03RQ04Analysis, reference_date: datetime) -> str:
+def render_markdown(result: RQ03RQ04Analysis) -> str:
     rel = result.releases_summary
     dps = result.days_since_push_summary
 
     lines = [
         "# Análise Exploratória — RQ03 e RQ04 (1000 repositórios)\n",
         "Esta análise usa os dados completos da coleta (S02), sem nova validação REST amostral.",
-        f"Data de referência para RQ04: {reference_date.isoformat()}",
+        "Referência para RQ04: `collected_at` de cada repositório (não a data de execução "
+        "deste script) — garante reprodutibilidade, mesmo critério já usado em RQ01.",
         "",
         "## Sumário Estatístico",
         "",
@@ -259,14 +273,13 @@ def build_arg_parser():
         "--output",
         type=Path,
         default=OUTPUT_PATH,
-        help="caminho do markdown de saída (padrão: docs/analise-rq03-rq04.md)",
+        help="caminho do markdown de saída (padrão: docs/analises/analise-rq03-rq04.md)",
     )
     return parser
 
 
 def main():
     args = build_arg_parser().parse_args()
-    reference_date = datetime.now(tz=timezone.utc)
 
     connection = get_connection()
     try:
@@ -278,8 +291,8 @@ def main():
         raise RuntimeError("nenhum repositório encontrado no banco — rode o coletor antes")
     validate_total_rows(len(rows))
 
-    result = run_analysis(rows, reference_date)
-    markdown = render_markdown(result, reference_date)
+    result = run_analysis(rows)
+    markdown = render_markdown(result)
     print(markdown)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

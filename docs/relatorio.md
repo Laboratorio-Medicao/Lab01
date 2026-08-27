@@ -93,6 +93,128 @@ Como referência para "linguagens de programação mais populares" (RQ05), o gru
 
 ---
 
+## 2.1 Estrutura GQM
+
+Medir software sem uma pergunta de pesquisa por trás produz números sem interpretação — coletar uma métrica não é, por si só, medir algo com sentido (ZUSE, 2013). Esta seção formaliza, no modelo **Goal-Question-Metric** (Basili, Caldiera & Rombach, 1994), a estrutura que já orienta implicitamente as seções 1 e 3.5 deste relatório: um objetivo único de investigação, do qual derivam 8 questões de pesquisa no total — as **7 RQs obrigatórias do enunciado (RQ01–RQ07)** mais a **RQ08, inovação própria do grupo (seção 3.6)** —, cada uma respondida por uma ou mais métricas já definidas e coletadas. Nenhuma métrica nova é introduzida aqui — o GQM apenas explicita a hierarquia que já estava implícita entre a Introdução (seção 1) e a Tabela de Métricas (seção 3.5).
+
+### Goal (G1)
+
+> **Analisar** os repositórios open-source mais populares do GitHub
+> **com o propósito de** caracterizar
+> **com respeito a** maturidade, contribuição externa, frequência de releases, atualização, aderência às linguagens mais populares, gestão de issues e engajamento real
+> **do ponto de vista de** pesquisadores de Engenharia de Software
+> **no contexto de** uma amostra dos 1.000 repositórios com maior número de estrelas no GitHub, coletada via API GraphQL em agosto de 2026.
+
+### Árvore GQM
+
+```mermaid
+graph TD
+    G["<b>Goal (G1)</b><br/>Analisar os repositórios open-source mais populares do GitHub<br/>com o propósito de caracterizar<br/>com respeito a maturidade, contribuição, releases, atualização,<br/>linguagem, issues e engajamento real<br/>do ponto de vista de pesquisadores de Eng. de Software<br/>no contexto da amostra de 1.000 repositórios (GraphQL, ago/2026)"]
+
+    G --> Q1["Question RQ01<br/>Sistemas populares são maduros/antigos?"]
+    G --> Q2["Question RQ02<br/>Sistemas populares recebem muita contribuição externa?"]
+    G --> Q3["Question RQ03<br/>Sistemas populares lançam releases com frequência?"]
+    G --> Q4["Question RQ04<br/>Sistemas populares são atualizados com frequência?"]
+    G --> Q5["Question RQ05<br/>Sistemas populares são escritos nas linguagens mais populares?"]
+    G --> Q6["Question RQ06<br/>Sistemas populares possuem alto percentual de issues fechadas?"]
+    G --> Q7["Question RQ07<br/>Linguagens populares recebem mais contribuição, releases e atualização?"]
+    G --> Q8["Question RQ08 (bônus)<br/>Popularidade reflete engajamento real (forks) ou admiração passiva (estrelas)?"]
+
+    Q1 --> M1["Metric<br/>Idade do repositório<br/>(collected_at − createdAt)/365,25 — anos"]
+    Q2 --> M2["Metric<br/>PRs aceitas (merged)<br/>pullRequests(states: MERGED).totalCount"]
+    Q3 --> M3["Metric<br/>Total de releases<br/>releases.totalCount"]
+    Q4 --> M4["Metric<br/>Tempo desde última atualização<br/>data de análise − pushedAt — dias"]
+    Q5 --> M5["Metric<br/>Linguagem primária<br/>primaryLanguage.name vs. TIOBE Top 20"]
+    Q6 --> M6["Metric<br/>Razão de issues fechadas<br/>closedIssues / (open + closed)"]
+    Q7 --> M7a["Metric<br/>Mediana de PRs mergeadas por linguagem"]
+    Q7 --> M7b["Metric<br/>Mediana de releases por linguagem"]
+    Q7 --> M7c["Metric<br/>Mediana de dias desde push por linguagem"]
+    Q7 --> M7d["Metric<br/>Correlação de Spearman (ρ)<br/>popularidade × cada mediana"]
+    Q8 --> M8["Metric<br/>Razão forks/estrelas<br/>forkCount / stargazerCount"]
+
+    classDef goal fill:#14213d,color:#fff,stroke:#14213d;
+    classDef question fill:#1f77b4,color:#fff,stroke:#1f77b4;
+    classDef metric fill:#eef1f5,color:#1a1a1a,stroke:#94a3b8;
+    class G goal;
+    class Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8 question;
+    class M1,M2,M3,M4,M5,M6,M7a,M7b,M7c,M7d,M8 metric;
+```
+
+**Versão em texto (fallback para exportação em PDF, caso o renderizador não suporte Mermaid):**
+
+```
+Goal (G1): Analisar os repositórios open-source mais populares do GitHub
+  com o propósito de caracterizar
+  com respeito a maturidade, contribuição externa, frequência de releases,
+    atualização, aderência às linguagens mais populares, gestão de issues
+    e engajamento real
+  do ponto de vista de pesquisadores de Engenharia de Software
+  no contexto de uma amostra dos 1.000 repositórios com maior número de
+    estrelas no GitHub, coletada via API GraphQL em agosto de 2026
+
+├─ Question RQ01 — Sistemas populares são maduros/antigos?
+│    └─ Metric: Idade do repositório
+├─ Question RQ02 — Sistemas populares recebem muita contribuição externa?
+│    └─ Metric: Total de pull requests aceitas (merged)
+├─ Question RQ03 — Sistemas populares lançam releases com frequência?
+│    └─ Metric: Total de releases
+├─ Question RQ04 — Sistemas populares são atualizados com frequência?
+│    └─ Metric: Tempo desde a última atualização
+├─ Question RQ05 — Sistemas populares são escritos nas linguagens mais populares?
+│    └─ Metric: Linguagem primária (comparada ao TIOBE Index Top 20)
+├─ Question RQ06 — Sistemas populares possuem um alto percentual de issues fechadas?
+│    └─ Metric: Razão de issues fechadas
+├─ Question RQ07 — Sistemas em linguagens populares recebem mais
+│    contribuição, releases e atualizações?
+│    ├─ Metric: Mediana de PRs mergeadas por linguagem
+│    ├─ Metric: Mediana de releases por linguagem
+│    ├─ Metric: Mediana de dias desde o último push por linguagem
+│    └─ Metric: Correlação de Spearman (ρ) entre popularidade da linguagem
+│         e cada mediana acima
+└─ Question RQ08 (bônus) — Sistemas populares atraem apenas admiração
+     passiva (estrelas) ou também engajamento ativo (forks)?
+     └─ Metric: Razão forks/estrelas (fork_star_ratio)
+```
+
+Nota: cada métrica acima só existe porque responde a uma Question específica — nunca o contrário, conforme a ideia central do GQM. RQ07 é a única Question com mais de uma métrica associada, porque uma única medida não é suficiente para responder "linguagens populares recebem mais contribuição, releases *e* atualização?" — são três fenômenos distintos, cada um com sua própria mediana por linguagem, mais a correlação que amarra os três à popularidade da linguagem.
+
+### Tabela de Registro
+
+| Question (RQ) | Metric | Definição Operacional | Responsável |
+|---|---|---|---|
+| RQ01 | Idade do repositório | `(collected_at − createdAt) / 365,25` (anos) | Marcos Alberto |
+| RQ02 | Pull requests aceitas | `pullRequests(states: MERGED).totalCount` | Marcos Alberto |
+| RQ03 | Total de releases | `releases.totalCount` | Arthur Soares |
+| RQ04 | Tempo desde última atualização | `data de análise − pushedAt` (dias) | Arthur Soares |
+| RQ05 | Linguagem primária | `primaryLanguage.name`, comparada ao top 20 do TIOBE Index (ago/2026) | Guilherme Vieira |
+| RQ06 | Razão de issues fechadas | `closedIssues / (openIssues + closedIssues)`; indefinida quando total = 0 | Guilherme Vieira |
+| RQ07 | Mediana de PRs mergeadas por linguagem | `median(merged_pull_requests)` agrupado por `primary_language` | Guilherme Vieira |
+| RQ07 | Mediana de releases por linguagem | `median(releases_count)` agrupado por `primary_language` | Guilherme Vieira |
+| RQ07 | Mediana de dias desde último push por linguagem | `median(days_since_push)` agrupado por `primary_language` | Guilherme Vieira |
+| RQ07 | Correlação de Spearman (ρ) | ρ entre rank de popularidade da linguagem (nº de repos na amostra) e cada mediana acima | Guilherme Vieira |
+| RQ08 (bônus) | Razão forks/estrelas | `forkCount / stargazerCount`; indefinida quando `stargazerCount = 0` | Marcos Alberto |
+
+Responsáveis conforme as Issues do Kanban já registradas na seção 3.3 (#11/#23/#31/#39/#58 → Marcos Alberto; #12/#24/#32/#40 → Arthur Soares; #13/#25/#33/#41 → Guilherme Vieira).
+
+### Tabela de Métricas consolidada (GQM × Seção 3.5)
+
+A tabela abaixo conecta cada métrica à sua Question e ao Goal único (G1), reaproveitando — sem duplicar — as definições operacionais, unidades e fontes já fixadas na Tabela de Métricas da seção 3.5, e acrescentando apenas a coluna de Responsável:
+
+| Goal | Question (RQ) | Metric | Definição Operacional | Unidade | Ferramenta / Fonte | Responsável |
+|---|---|---|---|---|---|---|
+| G1 | RQ01 | Idade do repositório | `(collected_at − createdAt) / 365,25` | Anos | GraphQL `Repository.createdAt` | Marcos Alberto |
+| G1 | RQ02 | Pull requests aceitas | `pullRequests(states: MERGED).totalCount` | Contagem | GraphQL `Repository.pullRequests` | Marcos Alberto |
+| G1 | RQ03 | Total de releases | `releases.totalCount` | Contagem | GraphQL `Repository.releases` | Arthur Soares |
+| G1 | RQ04 | Tempo desde última atualização | `data de análise − pushedAt` | Dias | GraphQL `Repository.pushedAt` | Arthur Soares |
+| G1 | RQ05 | Linguagem primária | `primaryLanguage.name`; comparada ao top 20 do TIOBE Index (ago/2026) | Categoria | GraphQL `Repository.primaryLanguage` | Guilherme Vieira |
+| G1 | RQ06 | Razão de issues fechadas | `closedIssues / (openIssues + closedIssues)`; indefinida quando total = 0 | Razão [0,1] | GraphQL `issues(states: OPEN/CLOSED).totalCount` | Guilherme Vieira |
+| G1 | RQ07 | Métricas de RQ02/03/04 por linguagem | Mediana de cada métrica agrupada por `primary_language`; correlação de Spearman entre rank de popularidade e cada mediana | Mediana + ρ | Banco de dados (SQL `GROUP BY`) | Guilherme Vieira |
+| G1 | RQ08 (bônus) | Razão forks/estrelas | `forkCount / stargazerCount`; indefinida quando `stargazerCount = 0` | Razão [0, +∞) | GraphQL `Repository.forkCount` | Marcos Alberto |
+
+Definições operacionais completas de cada métrica — incluindo tratamento de valores ausentes, casos de borda e decisões metodológicas — permanecem detalhadas na seção 3.5 e em `docs/metodologia.md`, para não duplicar conteúdo entre as duas seções.
+
+---
+
 ## 3. Metodologia
 
 ### 3.1 Principais Desafios
@@ -180,13 +302,13 @@ O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes co
 
 **Print do board:**
 
-![Kanban board — Sprint S03](kanban-board-s03.png)
+![Kanban board — Sprint S03](visualizacoes/kanban-board-s03.png)
 
 ### 3.4 Ferramentas
 
 | Ferramenta | Uso |
 |---|---|
-| **Python 3.9** (stdlib: `urllib`, `json`) | Script de coleta GraphQL e REST — sem bibliotecas de terceiros para acesso à API |
+| **Python 3** (stdlib: `urllib`, `json`) | Script de coleta GraphQL e REST — sem bibliotecas de terceiros para acesso à API |
 | **psycopg2** | Conexão com PostgreSQL (não acessa API do GitHub — fora da restrição do enunciado) |
 | **pika** | Client RabbitMQ para o sistema de fila de jobs |
 | **PostgreSQL / Supabase** | Armazenamento compartilhado dos dados coletados |
@@ -194,7 +316,7 @@ O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes co
 | **pytest** | Testes unitários e de integração |
 | **GitHub GraphQL API** | Coleta dos campos de cada repositório |
 | **GitHub REST API** | Validação cruzada dos dados coletados |
-| **GitHub Projects (v2)** | Gestão do processo — link: [preencher] |
+| **GitHub Projects (v2)** | Gestão do processo — link: https://github.com/orgs/Laboratorio-Medicao/projects/1 |
 
 ### 3.5 Tabela de Métricas
 
@@ -238,9 +360,9 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 | Máximo | 18,40 anos |
 | Outliers (regra IQR 1,5×) | 0 |
 
-**Achado de star-farming:** 21 dos 1.000 repositórios (2,1%) têm idade < 1,5 anos e mais de 100 mil estrelas — liderados por `openclaw/openclaw` (386.403⭐, 0,70 anos) e outros projetos ligados ao hype recente de agentes de IA.
+**Achado — grupo suspeito de star-farming:** 21 dos 1.000 repositórios (2,1%) têm idade < 1,5 anos e mais de 100 mil estrelas — critério proxy que não constitui prova de compra/falsificação de estrelas (ver `docs/metodologia.md`, seção "Risco de dados"), mas é compatível com o padrão documentado na comunidade do GitHub como característico de star-farming/fake stars em 2025–2026. Liderado por `openclaw/openclaw` (386.403⭐, 0,70 anos) e outros projetos ligados ao hype recente de agentes de IA.
 
-**Visualização:** `docs/report-rq01-rq02.html` — histograma de idade, box plot, e dispersão idade × estrelas com destaque para o grupo de star-farming.
+**Visualização:** `docs/visualizacoes/report-rq01-rq02.html` — histograma de idade, box plot, e dispersão idade × estrelas com destaque para o grupo de star-farming.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A mediana observada (7,70 anos) fica bem acima do limiar de 3 anos previsto, confirmando que a popularidade da maioria dos repositórios é fruto de acúmulo orgânico ao longo de vários anos, não de picos recentes. A cauda de repositórios jovens existe como esperado, mas é pequena (2,1%) e concentrada no fenômeno de star-farming/hype de IA já antecipado na hipótese. Um ponto que **diverge** da expectativa inicial é a magnitude dessa cauda: em S01 (amostra de 100), o mesmo padrão aparecia em 16% dos casos — quase 8× a proporção observada na amostra completa. A leitura mais provável é viés de amostra pequena: o corte "top 100" tende a capturar desproporcionalmente os repositórios em ascensão mais recente e virótica, enquanto o "top 1.000" dilui esse efeito com projetos de cauda mais longa e histórico mais consolidado.
 
@@ -259,7 +381,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Top outliers:** `firstcontributions/first-contributions` (103.167), `llvm/llvm-project` (96.690), `elastic/elasticsearch` (95.345), `getsentry/sentry` (91.101), `home-assistant/core` (90.011), `rust-lang/rust` (73.490), `kubernetes/kubernetes` (65.646), `python/cpython` (62.610), entre outros.
 
-**Visualização:** `docs/report-rq01-rq02.html` — histograma em escala log10 (dada a forte assimetria) e box plot em escala linear.
+**Visualização:** `docs/visualizacoes/report-rq01-rq02.html` — histograma em escala log10 (dada a forte assimetria) e box plot em escala linear.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A distância entre mediana (768) e média (4.212,96) já denuncia a forte assimetria à direita prevista, e os 123 outliers altos são majoritariamente projetos de infraestrutura madura com grande base de contribuidores externos (compiladores, bancos de dados, kernels de sistemas, frameworks de uso massivo) — exatamente o perfil antecipado na hipótese. Uma exceção interessante que a hipótese não previu é o outlier máximo, `firstcontributions/first-contributions`: não é um projeto de infraestrutura, mas um repositório criado especificamente como exercício de primeira contribuição em código aberto — sua função é gerar PRs em alto volume, o que infla a métrica por um motivo estrutural diferente do "engajamento de comunidade madura" hipotetizado para os demais outliers.
 
@@ -283,7 +405,7 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 | Star-farming (idade < 1,5a, > 100 mil⭐) | 21 | 0,1190 |
 | Resto da amostra | 979 | 0,1144 |
 
-**Visualização:** `docs/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
+**Visualização:** `docs/visualizacoes/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
 
 **Discussão hipótese vs. resultado:** a hipótese **não se confirma**. Esperava-se que o grupo suspeito de star-farming apresentasse `fork_star_ratio` sistematicamente mais baixo — sinal de que estrelas artificiais não geram forks proporcionais —, mas a mediana observada nesse grupo (0,1190) é, na verdade, igual ou ligeiramente **maior** que a do resto da amostra (0,1144). Isso não invalida o achado de star-farming em si (RQ01), que se apoia em critério independente (idade × estrelas), mas indica que `fork_star_ratio` sozinho não é um discriminador forte para esse grupo específico. Uma leitura possível é que parte dos repositórios nesse grupo (ligados ao hype de agentes de IA) atrai também curiosidade genuína — testes, estudo de código, tentativas de uso — que se traduz em forks reais, mesmo quando uma fração das estrelas não é orgânica; ou que o N pequeno (21 repositórios) torna a mediana desse grupo sensível a poucos casos extremos.
 
@@ -302,30 +424,34 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 **Sanidade da distribuição:** 280 repositórios (28,00%) não possuíam releases formais. Não foram identificados valores ausentes em `releases_count`.
 
-**Visualização:** `docs/report-rq03-rq04.html` — histograma em escala log10 e box plot do total de releases.
+**Visualização:** `docs/visualizacoes/report-rq03-rq04.html` — histograma em escala log10 e box plot do total de releases.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A média (127,35) é muito superior à mediana (39,50), e o máximo de 1.000 releases, combinado com 94 outliers altos, evidencia uma distribuição assimétrica à direita. O resultado também confirma que popularidade não implica necessariamente muitos releases: 28,00% dos repositórios não utilizam releases formais, possivelmente por adotarem entrega contínua ou por serem projetos de documentação, listas curadas e materiais de estudo. A métrica é uma contagem acumulada e, portanto, também pode favorecer projetos mais antigos.
+
+**Nota sobre o critério de confirmação:** diferente das demais RQs desta seção, a hipótese informal de RQ03 (seção 1) não fixou um limiar numérico prévio para "número moderado de releases" — é uma expectativa qualitativa sobre o formato da distribuição (assimétrica, com outliers de versionamento rigoroso e uma cauda de projetos sem releases formais). A confirmação acima é, portanto, um julgamento sobre esse padrão geral, não um teste contra um valor pré-registrado como em RQ01 (mediana > 3 anos) ou RQ06 (mediana > 0,5).
 
 ### 4.5 RQ04 — Frequência de atualização
 
 | Métrica | Valor |
 |---|---|
-| N | 1000 |
-| Mínimo | 2,46 dias |
-| 1º quartil | 2,71 dias |
-| **Mediana** | **5,87 dias** |
-| Média | 116,36 dias |
-| 3º quartil | 52,50 dias |
-| Máximo | 2.451,77 dias |
-| Outliers altos (regra IQR 1,5×) | 190 |
+| N | 999 |
+| Mínimo | 0,00 dias |
+| 1º quartil | 0,19 dias |
+| **Mediana** | **3,11 dias** |
+| Média | 113,86 dias |
+| 3º quartil | 50,98 dias |
+| Máximo | 2.449,31 dias |
+| Outliers altos (regra IQR 1,5×) | 188 |
 
-**Sanidade da distribuição:** nenhum repositório estava há pelo menos dez anos sem push. O maior valor observado corresponde a aproximadamente 6,7 anos desde a última atualização. Não foram encontrados valores ausentes, inválidos ou futuros em `pushed_at`.
+**Referência temporal:** cada repositório usa seu próprio `collected_at` como "hoje" (mesmo critério de RQ01, documentado em `docs/metodologia.md`), não a data em que este script foi executado — isso garante que a métrica seja reproduzível independentemente de quando a análise é rodada.
 
-**Visualização:** `docs/report-rq03-rq04.html` — histograma em escala log10, box plot e dispersão entre releases e dias desde o último push.
+**Sanidade da distribuição:** nenhum repositório estava há pelo menos dez anos sem push. O maior valor observado corresponde a aproximadamente 6,7 anos desde a última atualização. 1 repositório (0,1%) foi excluído por ter `pushed_at` posterior ao seu próprio `collected_at` (defasagem de frações de segundo entre a coleta e o último push, não um erro de coleta). Não foram encontrados valores ausentes ou inválidos em `pushed_at`.
 
-**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. A mediana de 5,87 dias, inferior ao limite previsto de 30 dias, mostra que a maioria dos repositórios populares foi atualizada recentemente. A diferença entre média e mediana, o máximo de 2.451,77 dias e os 190 outliers altos indicam uma cauda de projetos com baixa atividade. Entretanto, a expectativa de encontrar repositórios com dez anos ou mais sem atualização não foi confirmada. Isso é compatível com o recorte dos 1.000 repositórios mais estrelados, que tende a privilegiar projetos ainda visíveis e ativos.
+**Visualização:** `docs/visualizacoes/report-rq03-rq04.html` — histograma em escala log10, box plot e dispersão entre releases e dias desde o último push.
 
-**Validação dos dados:** na amostra de oito repositórios, `releases_count` e `pushed_at` coincidiram integralmente entre GraphQL e REST ([validacao-rq03-rq04.md](validacao-rq03-rq04.md)). Ainda assim, `pushed_at` mede apenas o último push e não representa a frequência histórica de commits; as conclusões descrevem a amostra em uma data de referência e não estabelecem causalidade.
+**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. A mediana de 3,11 dias, muito inferior ao limite previsto de 30 dias, mostra que a maioria dos repositórios populares foi atualizada recentemente. A diferença entre média e mediana, o máximo de 2.449,31 dias e os 188 outliers altos indicam uma cauda de projetos com baixa atividade. Entretanto, a expectativa de encontrar repositórios com dez anos ou mais sem atualização não foi confirmada. Isso é compatível com o recorte dos 1.000 repositórios mais estrelados, que tende a privilegiar projetos ainda visíveis e ativos.
+
+**Validação dos dados:** na amostra de oito repositórios, `releases_count` e `pushed_at` coincidiram integralmente entre GraphQL e REST ([validacoes/validacao-rq03-rq04.md](validacoes/validacao-rq03-rq04.md)). Ainda assim, `pushed_at` mede apenas o último push e não representa a frequência histórica de commits; as conclusões descrevem a amostra em uma data de referência e não estabelecem causalidade.
 
 ### 4.6 RQ05 — Linguagens mais populares
 
@@ -346,11 +472,11 @@ Os valores abaixo cobrem a amostra completa de 1.000 repositórios (coleta de S0
 
 Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, cobrindo 61,1% dos repositórios. As principais linguagens fora do TIOBE top 20 com representação significativa são: TypeScript (174 repos), Jupyter Notebook (24 repos), Shell (20 repos), HTML (11 repos) e Kotlin (9 repos).
 
-**Visualização:** `docs/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
+**Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
 
-**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. Python no topo (22,9%, #1 no TIOBE) e TypeScript como principal exceção fora do ranking TIOBE foram exatamente os dois pontos centrais previstos. A previsão de C e C++ logo após JavaScript, porém, **não se confirma**: Go (#4, 7,6%) e Rust (#5, 5,7%) ocupam essas posições, refletindo a forte presença de projetos de infraestrutura moderna e sistemas de alto desempenho no topo do GitHub — domínios em que Go e Rust ganharam tração expressiva a partir de 2022. C++ (#7) e C (#9) aparecem, mas já atrás de Java. O resultado reforça que o perfil do top 1.000 do GitHub é influenciado pelo crescimento recente de linguagens de sistemas modernas, além do domínio histórico esperado.
+**Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. Python no topo (22,9%, #1 no TIOBE) e TypeScript como principal exceção fora do ranking TIOBE foram exatamente os dois pontos centrais previstos. A previsão de C e C++ logo após JavaScript, porém, **não se confirma**: Go (4º na amostra, 7,6%) e Rust (5º na amostra, 5,7%) ocupam essas posições, refletindo a forte presença de projetos de infraestrutura moderna e sistemas de alto desempenho no topo do GitHub — domínios em que Go e Rust ganharam tração expressiva a partir de 2022. C++ (7º na amostra) e C (9º na amostra) aparecem, mas já atrás de Java. Essas posições referem-se ao ranking de frequência **na amostra coletada** (coluna "Posição" da tabela acima), não ao ranking do TIOBE Index — que, para essas quatro linguagens, é bem diferente (Go #14, Rust #10, C++ #3, C #2). O resultado reforça que o perfil do top 1.000 do GitHub é influenciado pelo crescimento recente de linguagens de sistemas modernas, além do domínio histórico esperado.
 
-**Validação dos dados:** na amostra de oito repositórios, `primaryLanguage` coincidiu integralmente entre GraphQL e REST em todos os casos ([validacao-rq05-rq06.md](validacao-rq05-rq06.md)).
+**Validação dos dados:** na amostra de oito repositórios, `primaryLanguage` coincidiu integralmente entre GraphQL e REST em todos os casos ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
 ### 4.7 RQ06 — Percentual de issues fechadas
 
@@ -366,28 +492,30 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 | Máximo | 1,0000 |
 | Outliers altos (regra IQR 1,5×) | 0 |
 
-**Visualização:** `docs/report-rq05-rq06-rq07.html` — histograma e box plot da razão de issues fechadas.
+**Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — histograma e box plot da razão de issues fechadas.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A mediana de 0,8763 está bem acima do limiar de 0,5 previsto, e a distribuição é claramente assimétrica à esquerda — concentrada próxima de 1,0, com 3º quartil em 0,9677. Isso indica que a vasta maioria dos repositórios populares mantém um backlog bem gerenciado. A cauda de projetos com baixo fechamento existe (mínimo de 0,0769), mas é estreita — não há nenhum outlier alto pela regra do IQR, o que reforça a concentração da distribuição em valores elevados. Um ponto que a hipótese não antecipou é a ausência total de outliers altos: esperava-se variância maior em projetos muito ativos com taxa de abertura superior à de fechamento, mas os dados mostram que mesmo esses projetos conseguem manter razões de fechamento acima do 1º quartil (0,70).
 
-**Validação dos dados:** nas discrepâncias pontuais identificadas (`f/prompts.chat` e `Shubhamsaboo/awesome-llm-apps`), a divergência nas contagens de issues abertas entre GraphQL e REST é atribuída a atividade ocorrida entre as duas coletas — não a erro de coleta ([validacao-rq05-rq06.md](validacao-rq05-rq06.md)).
+**Validação dos dados:** nas discrepâncias pontuais identificadas (`f/prompts.chat` e `Shubhamsaboo/awesome-llm-apps`), a divergência nas contagens de issues abertas entre GraphQL e REST é atribuída a atividade ocorrida entre as duas coletas — não a erro de coleta ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
-### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização (bônus)
+### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização
 
-**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana.
+**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
 
 | Linguagem | Nº de repos | Mediana de PRs mergeadas (RQ02) | Mediana de releases (RQ03) | Mediana de dias desde último push (RQ04) |
 |---|---|---|---|---|
-| Python | 229 | 560,0 | 20,0 | 5,2 |
-| TypeScript | 174 | 1.996,5 | 134,0 | 2,6 |
-| JavaScript | 111 | 617,0 | 39,0 | 9,2 |
-| Go | 76 | 1.690,0 | 139,5 | 2,8 |
-| Rust | 57 | 2.491,0 | 90,0 | 2,4 |
-| Java | 41 | 939,0 | 54,0 | 4,2 |
-| C++ | 40 | 1.121,0 | 50,5 | 3,3 |
-| Jupyter Notebook | 24 | 78,0 | 0,0 | 25,3 |
-| C | 21 | 294,0 | 43,0 | 3,9 |
-| Shell | 20 | 389,5 | 9,5 | 13,8 |
+| Python | 229 | 560,0 | 20,0 | 3,5 |
+| TypeScript | 174 | 1.996,5 | 134,0 | 0,5 |
+| JavaScript | 111 | 617,0 | 39,0 | 7,7 |
+| Go | 76 | 1.690,0 | 139,5 | 0,8 |
+| Rust | 57 | 2.491,0 | 90,0 | 0,8 |
+| Java | 41 | 939,0 | 54,0 | 2,8 |
+| C++ | 40 | 1.121,0 | 50,5 | 1,3 |
+| Jupyter Notebook | 24 | 78,0 | 0,0 | 23,9 |
+| C | 21 | 294,0 | 43,0 | 1,4 |
+| Shell | 20 | 389,5 | 9,5 | 12,4 |
+
+**Critério de inclusão:** apenas linguagens com pelo menos 10 repositórios na amostra entram na análise (`min_repos=10`), e a tabela exibe as 10 mais frequentes dentre essas. 13 linguagens atingem o critério de ≥10 repositórios — além das 10 exibidas, também qualificam Ruby (13), HTML (11) e Swift (10), omitidas da tabela apenas pelo corte de exibição top-10, não por não atenderem ao método.
 
 **Correlação de Spearman entre popularidade da linguagem (nº de repos) e cada métrica:**
 
@@ -395,25 +523,25 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 |---|---|---|
 | PRs mergeadas (RQ02) | 0,52 | correlação positiva moderada |
 | Releases (RQ03) | 0,39 | sem correlação clara |
-| Dias desde último push (RQ04) | 0,35 | sem correlação clara |
+| Dias desde último push (RQ04) | 0,39 | sem correlação clara |
 
-**Visualização:** `docs/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
+**Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
 
-**Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. A correlação moderada com PRs mergeadas (ρ = 0,52) confirma a previsão de que popularidade da linguagem amplia o pool potencial de contribuidores externos, mas esse efeito é atenuado: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), que são menos frequentes na amostra. Isso sugere que o tipo de projeto importa mais do que a linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização (ρ ≈ 0,35–0,39), a correlação fraca confirma que essas métricas dependem da política de governança de cada projeto, não da linguagem usada: Jupyter Notebook, por exemplo, tem mediana de releases igual a zero apesar de 24 repositórios na amostra, por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. A correlação moderada com PRs mergeadas (ρ = 0,52) confirma a previsão de que popularidade da linguagem amplia o pool potencial de contribuidores externos, mas esse efeito é atenuado: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), que são menos frequentes na amostra. Isso sugere que o tipo de projeto importa mais do que a linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização (ρ = 0,39 em ambas), a correlação fraca confirma que essas métricas dependem da política de governança de cada projeto, não da linguagem usada: Jupyter Notebook, por exemplo, tem mediana de releases igual a zero apesar de 24 repositórios na amostra, por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
 
 ---
 
 ## 5. Conclusão
 
-Este laboratório analisou os 1.000 repositórios com maior número de estrelas no GitHub (coleta de agosto de 2026) ao longo de sete questões de pesquisa e uma métrica bônus. Os resultados permitem traçar um perfil coerente do que caracteriza um repositório popular no GitHub:
+Este laboratório analisou os 1.000 repositórios com maior número de estrelas no GitHub (coleta de agosto de 2026) ao longo das 7 questões de pesquisa obrigatórias do enunciado (RQ01–RQ07) mais a RQ08, questão de pesquisa bônus proposta pelo próprio grupo (seção 3.6) — 8 no total, conforme a estrutura GQM da seção 2.1. Os resultados permitem traçar um perfil coerente do que caracteriza um repositório popular no GitHub:
 
 **Maturidade e contribuição (RQ01 e RQ02).** Repositórios populares são predominantemente maduros: a mediana de idade é de 7,70 anos, confirmando que popularidade orgânica é um processo acumulativo. A distribuição de pull requests aceitas é fortemente assimétrica (mediana de 768; média de 4.212), com outliers formados por projetos de infraestrutura madura — compiladores, bancos de dados, frameworks de uso massivo —, exatamente o perfil esperado para projetos que constroem grandes comunidades de contribuidores externos.
 
-**Ciclo de releases e atividade (RQ03 e RQ04).** Repositórios populares tendem a ser atualizados com frequência (mediana de 5,87 dias desde o último push), mas o número de releases é altamente variável: 28% dos repositórios não possuem releases formais, refletindo projetos de documentação, listas curadas e projetos com entrega contínua que não usam o mecanismo de release do GitHub. A cauda de projetos inativos existe, mas é estreita dentro do recorte dos 1.000 mais estrelados.
+**Ciclo de releases e atividade (RQ03 e RQ04).** Repositórios populares tendem a ser atualizados com frequência (mediana de 3,11 dias desde o último push), mas o número de releases é altamente variável: 28% dos repositórios não possuem releases formais, refletindo projetos de documentação, listas curadas e projetos com entrega contínua que não usam o mecanismo de release do GitHub. A cauda de projetos inativos existe, mas é estreita dentro do recorte dos 1.000 mais estrelados.
 
 **Linguagens e issues (RQ05 e RQ06).** Python domina o topo (22,9%) em linha com o TIOBE, mas TypeScript (17,4%) emerge como segunda linguagem mais representada apesar de estar fora do ranking TIOBE — reflexo de sua adoção massiva em projetos open-source modernos de frontend e tooling. C e C++ aparecem mais abaixo do esperado, superados por Go e Rust, que cresceram fortemente em projetos de sistemas de alto desempenho. O backlog de issues é bem gerenciado: mediana de razão de fechamento de 0,8763, com a distribuição concentrada próxima de 1,0.
 
-**Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. A correlação de Spearman entre popularidade da linguagem e PRs mergeadas é moderada (ρ = 0,52) e, mesmo assim, é explicada mais pelo tipo de projeto do que pela linguagem em si. Para releases e atualização a correlação é fraca (ρ ≈ 0,35–0,39), confirmando que essas métricas são governadas pela política interna de cada projeto.
+**Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. A correlação de Spearman entre popularidade da linguagem e PRs mergeadas é moderada (ρ = 0,52) e, mesmo assim, é explicada mais pelo tipo de projeto do que pela linguagem em si. Para releases e atualização a correlação é fraca (ρ = 0,39 em ambas), confirmando que essas métricas são governadas pela política interna de cada projeto.
 
 **Engajamento real vs. star-farming (RQ08 — bônus).** A hipótese de que repositórios suspeitos de star-farming apresentariam `fork_star_ratio` mais baixo não se confirmou: a mediana do grupo suspeito (0,1190) é ligeiramente superior à do restante da amostra (0,1144). Isso indica que `fork_star_ratio` sozinho não é um discriminador eficaz para esse fenômeno — parte dos repositórios desse grupo pode atrair curiosidade e forks genuínos mesmo com uma fração de estrelas inorgânicas, e o N pequeno (21 repositórios) amplifica a sensibilidade da mediana a casos extremos.
 

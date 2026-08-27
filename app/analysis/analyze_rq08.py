@@ -9,7 +9,7 @@ from src import storage
 from src.metrics import compute_age_years, compute_fork_star_ratio
 from src.storage import get_connection
 
-OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analise-rq08.md"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "analises" / "analise-rq08.md"
 
 STAR_FARMING_AGE_YEARS = 1.5
 STAR_FARMING_STARGAZERS = 100_000
@@ -176,9 +176,9 @@ def render_markdown(
         "**Escopo:** validação estatística de consistência (distribuição, outliers, "
         "valores ausentes) de `fork_star_ratio` sobre a totalidade dos 1.000 "
         "repositórios coletados — distinta da validação cruzada campo-a-campo de "
-        "`fork_count` contra a REST API já feita em `docs/validacao-rq08.md` "
-        "(amostra de 8 repositórios). Ver `docs/fonte-da-verdade-s02.md`, seção 8.1, "
-        "e `docs/metodologia.md`, seção \"RQ08 (bônus)\".\n",
+        "`fork_count` contra a REST API já feita em `docs/validacoes/validacao-rq08.md` "
+        "(amostra de 8 repositórios). Ver `docs/metodologia.md`, seção "
+        "\"RQ08 (bônus) — Engajamento real: razão forks/estrelas\".\n",
     ]
 
     lines += render_field_section("`fork_star_ratio` (fork_count / stargazer_count)", ratio_summary)
