@@ -267,20 +267,20 @@ Definições operacionais completas de cada métrica — incluindo tratamento de
 | #44 | Fila de requisições para controle de rate limit | Guilherme Vieira |
 | #58 | RQ08 (bônus): coleta de fork_count, métrica fork_star_ratio e validação cruzada | Marcos Alberto |
 
-**S03 — Análise, Visualização e Dashboard** *(em andamento)*
+**S03 — Análise, Visualização e Dashboard**
 
 | Issue | Título | Responsável |
 |---|---|---|
 | #31 | Análise e visualização RQ01 e RQ02 | Marcos Alberto |
 | #32 | Análise e visualização RQ03 e RQ04 | Arthur Soares |
 | #33 | Análise e visualização RQ05, RQ06 e RQ07 (bônus) | Guilherme Vieira |
-| #34 | Matriz de correlação entre métricas | — |
-| #35 | Dashboard interativo HTML | — |
+| #34 | Matriz de correlação entre métricas | Arthur Soares |
+| #35 | Dashboard interativo HTML | Marcos Alberto |
 | #39 | Relatório — Resultados e discussão RQ01 e RQ02 | Marcos Alberto |
 | #40 | Relatório — Resultados e discussão RQ03 e RQ04 | Arthur Soares |
-| #41 | Relatório — Resultados e discussão RQ05, RQ06 e RQ07 | — |
-| #42 | Relatório — Seção de configuração do processo | — |
-| #43 | Relatório — Revisão final e exportação PDF | — |
+| #41 | Relatório — Resultados e discussão RQ05, RQ06 e RQ07 | Guilherme Vieira |
+| #42 | Relatório — Seção de configuração do processo | Guilherme Vieira |
+| #43 | Relatório — Revisão final e exportação PDF | Guilherme Vieira |
 
 #### Configuração do processo — GitHub Projects
 
@@ -342,6 +342,10 @@ O grupo propôs uma métrica adicional não solicitada pelo enunciado: `fork_cou
 
 Em vez de um script de coleta sequencial com `time.sleep` em caso de rate limit, o grupo implementou um sistema de fila de jobs com RabbitMQ (`app/src/queue/`): um producer publica o job inicial; cada consumer processa uma página, persiste os dados e enfileira o próximo job. Isso torna a coleta retomável após falhas ou rate limits sem reprocessar dados já salvos, e desacopla a lógica de paginação da lógica de persistência.
 
+**Matriz de correlação global entre métricas**
+
+Como análise exploratória complementar, o grupo calculou a correlação de Spearman entre todas as métricas numéricas coletadas — estrelas, forks, PRs mergeadas, releases, issues, idade, dias desde último push, razão de issues fechadas e razão forks/estrelas — sobre os 1.000 repositórios da amostra. Os resultados estão em `docs/visualizacoes/report-correlacao.html` e são discutidos na seção 4.10.
+
 ---
 
 ## 4. Resultados
@@ -367,7 +371,7 @@ A coleta foi realizada em **agosto de 2026** via API GraphQL do GitHub, cobrindo
 - **21 repositórios suspeitos de star-farming (2,1%):** idade < 1,5 anos e > 100 mil estrelas. Mantidos na amostra; analisados separadamente em RQ01 (seção 4.2) e RQ08 (seção 4.4).
 - **280 repositórios sem releases formais (28,0%):** `releases_count = 0`; mantidos na amostra de RQ03, contribuem para a mediana e são discutidos na seção 4.5.
 
-Não foram identificados valores duplicados nem inconsistências entre os campos coletados via GraphQL, conforme validação cruzada com a REST API documentada nos arquivos `docs/validacoes/`.
+Não foram identificadas duplicidades entre os campos coletados via GraphQL, conforme validação cruzada com a REST API documentada nos arquivos `docs/validacoes/`. **Exceção conhecida:** o campo `releases.totalCount` da API GraphQL do GitHub satura em 1.000 para repositórios com volume muito alto de releases — 21 repositórios da amostra (2,1%) atingem esse teto e têm contagem real maior que a reportada (ex.: `home-assistant/core` reporta 1.000 via GraphQL, mas possui 1.633 releases reais via paginação REST). Esses 21 valores devem ser lidos como piso, não como contagem exata — ver discussão em §4.5 (RQ03).
 
 As visualizações interativas (histogramas, box plots e gráficos de dispersão) referenciadas em cada RQ foram geradas em S03 e estão disponíveis nos arquivos HTML em `docs/visualizacoes/`.
 
@@ -452,11 +456,11 @@ As visualizações interativas (histogramas, box plots e gráficos de dispersão
 | Máximo | 1.000 |
 | Outliers altos (regra IQR 1,5×) | 94 |
 
-**Sanidade da distribuição:** 280 repositórios (28,00%) não possuíam releases formais. Não foram identificados valores ausentes em `releases_count`.
+**Sanidade da distribuição:** 280 repositórios (28,00%) não possuíam releases formais. Não foram identificados valores ausentes em `releases_count`. **Nota sobre o teto da API:** o campo `releases.totalCount` do GraphQL do GitHub satura em 1.000 — 21 repositórios da amostra (2,1%) atingem esse valor e têm contagem real superior (confirmado via paginação REST). O máximo reportado na tabela acima (1.000) e a média (127,35) são, portanto, valores conservadores; a mediana (39,50) não é afetada, pois os 21 repositórios capados estão todos acima do ponto médio da distribuição.
 
 **Visualização:** `docs/visualizacoes/report-rq03-rq04.html` — histograma em escala log10 e box plot do total de releases.
 
-**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A média (127,35) é muito superior à mediana (39,50), e o máximo de 1.000 releases, combinado com 94 outliers altos, evidencia uma distribuição assimétrica à direita. O resultado também confirma que popularidade não implica necessariamente muitos releases: 28,00% dos repositórios não utilizam releases formais, possivelmente por adotarem entrega contínua ou por serem projetos de documentação, listas curadas e materiais de estudo. A métrica é uma contagem acumulada e, portanto, também pode favorecer projetos mais antigos.
+**Discussão hipótese vs. resultado:** a hipótese **se confirma**. A média (127,35) é muito superior à mediana (39,50), e o máximo registrado de 1.000 releases (teto da API — valor real é maior para 21 repositórios), combinado com 94 outliers altos, evidencia uma distribuição assimétrica à direita. O resultado também confirma que popularidade não implica necessariamente muitos releases: 28,00% dos repositórios não utilizam releases formais, possivelmente por adotarem entrega contínua ou por serem projetos de documentação, listas curadas e materiais de estudo. A métrica é uma contagem acumulada e, portanto, também pode favorecer projetos mais antigos.
 
 **Nota sobre o critério de confirmação:** diferente das demais RQs desta seção, a hipótese informal de RQ03 (seção 1) não fixou um limiar numérico prévio para "número moderado de releases" — é uma expectativa qualitativa sobre o formato da distribuição (assimétrica, com outliers de versionamento rigoroso e uma cauda de projetos sem releases formais). A confirmação acima é, portanto, um julgamento sobre esse padrão geral, não um teste contra um valor pré-registrado como em RQ01 (mediana > 3 anos) ou RQ06 (mediana > 0,5).
 
@@ -500,7 +504,24 @@ As visualizações interativas (histogramas, box plots e gráficos de dispersão
 | 9 | C | 21 | 2,1% | #2 |
 | 10 | Shell | 20 | 2,0% | — |
 
-Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, cobrindo 61,1% dos repositórios. As principais linguagens fora do TIOBE top 20 com representação significativa são: TypeScript (174 repos), Jupyter Notebook (24 repos), Shell (20 repos), HTML (11 repos) e Kotlin (9 repos).
+Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, cobrindo 61,1% dos repositórios (611/1.000). As principais linguagens fora do TIOBE top 20 com representação significativa são: TypeScript (174 repos), Jupyter Notebook (24 repos), Shell (20 repos), HTML (11 repos) e Kotlin (9 repos).
+
+**TIOBE Index Top 20 — agosto de 2026 (referência usada nesta análise):**
+
+| # | Linguagem | # | Linguagem |
+|---|---|---|---|
+| 1 | Python | 11 | Delphi |
+| 2 | C | 12 | MATLAB |
+| 3 | C++ | 13 | PHP |
+| 4 | Java | 14 | Go |
+| 5 | C# | 15 | Swift |
+| 6 | JavaScript | 16 | R |
+| 7 | Visual Basic | 17 | Scratch |
+| 8 | Fortran | 18 | Ruby |
+| 9 | SQL | 19 | COBOL |
+| 10 | Rust | 20 | Assembly |
+
+Das 20, as 12 presentes na amostra são: Python, C, C++, Java, JavaScript, Go, Rust, PHP, Swift, Ruby, Assembly e C#.
 
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
 
@@ -549,15 +570,46 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 **Correlação de Spearman entre popularidade da linguagem (nº de repos) e cada métrica:**
 
+**Nota sobre a direção das métricas:** para que as três correlações tenham a mesma direção de leitura (ρ positivo = mais associado à popularidade), a correlação de "dias desde último push" foi calculada sobre o *negativo* dessa mediana — menos dias equivale a atualização mais frequente. Quem recalcular diretamente sobre os valores da tabela acima (dias positivos) obterá ρ = −0,39, de mesma magnitude e mesma interpretação qualitativa.
+
 | Métrica | ρ | Interpretação (indicativa) |
 |---|---|---|
 | PRs mergeadas (RQ02) | 0,52 | tendência positiva moderada |
 | Releases (RQ03) | 0,39 | tendência positiva fraca |
-| Dias desde último push (RQ04) | 0,39 | tendência positiva fraca |
+| Dias desde último push (RQ04) | 0,39 (sobre −dias) | tendência positiva fraca |
 
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. As correlações de Spearman calculadas sobre as 10 linguagens mais frequentes apontam uma tendência positiva moderada com PRs mergeadas (ρ = 0,52) e tendências fracas com releases e atualização (ρ = 0,39 em ambas) — mas, dado o tamanho amostral reduzido (n=10), nenhum valor é estatisticamente significativo a α=0,05, de modo que os resultados são tratados como indicativos de padrão, não como evidência confirmatória definitiva. A interpretação qualitativa, ainda assim, é coerente com a hipótese: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), sugerindo que o tipo de projeto importa mais do que a popularidade da linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização, a tendência fraca confirma que essas métricas dependem da política de governança de cada projeto: Jupyter Notebook tem mediana de releases igual a zero por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
+
+### 4.10 Matriz de Correlação Global
+
+Como análise complementar às RQs do enunciado, o grupo calculou a correlação de Spearman entre todas as métricas numéricas coletadas sobre os 1.000 repositórios. Spearman foi escolhido por ser robusto à assimetria e outliers característicos das distribuições de contagem do GitHub (mesmo critério de RQ07). Os pares com maior correlação absoluta são:
+
+| Métrica A | Métrica B | ρ (Spearman) | N |
+|---|---|---:|---:|
+| `closed_issues` | `issues_total` | 0,989 | 1.000 |
+| `fork_count` | `fork_star_ratio` | 0,821 | 1.000 |
+| `merged_pull_requests` | `closed_issues` | 0,733 | 1.000 |
+| `merged_pull_requests` | `issues_total` | 0,713 | 1.000 |
+| `releases_count` | `closed_issues` | 0,710 | 1.000 |
+| `releases_count` | `issues_total` | 0,697 | 1.000 |
+| `open_issues` | `issues_total` | 0,688 | 1.000 |
+| `merged_pull_requests` | `dias_desde_ultimo_push` | −0,614 | 999 |
+| `stargazer_count` | `fork_count` | 0,611 | 1.000 |
+| `merged_pull_requests` | `releases_count` | 0,609 | 1.000 |
+
+**Visualização:** `docs/visualizacoes/report-correlacao.html` — matriz de calor completa (Spearman e Pearson para comparação).
+
+**Discussão:** três relações merecem destaque por conectar os resultados das RQs obrigatórias entre si:
+
+- **PRs mergeadas × dias desde último push (ρ = −0,614):** projetos com mais contribuição externa (RQ02) tendem a ter menor tempo desde o último push (RQ04) — ou seja, contribuição e frequência de atualização caminham juntas, o que é intuitivo: uma comunidade ativa de contribuidores mantém o repositório em movimento contínuo.
+
+- **PRs mergeadas × releases (ρ = 0,609):** projetos que recebem mais contribuição (RQ02) também lançam mais releases (RQ03), sugerindo que o ciclo de contribuição externa e o ciclo de versionamento formal estão acoplados em projetos maduros.
+
+- **Estrelas × forks (ρ = 0,611):** popularidade (estrelas) e engajamento ativo (forks) caminham juntos na maior parte da amostra, o que é consistente com o resultado da RQ08 — a hipótese de que repositórios suspeitos de star-farming tivessem razão forks/estrelas sistematicamente mais baixa não se confirmou justamente porque, na prática, forks e estrelas são correlacionados organicamente.
+
+A primeira relação (ρ = −0,614 entre PRs e dias desde push) é a de maior interesse metodológico: com N=999 e correlação moderada-forte, esse resultado tem potência estatística suficiente para ser tratado como evidência — diferentemente das correlações da RQ07 (n=10 linguagens), que foram classificadas como apenas indicativas.
 
 ---
 
@@ -574,6 +626,8 @@ Este laboratório analisou os 1.000 repositórios com maior número de estrelas 
 **Linguagem vs. métricas de contribuição (RQ07).** Não há evidência consistente de que a popularidade da linguagem determine contribuição, releases ou frequência de atualização. As correlações de Spearman (ρ = 0,52 para PRs; ρ = 0,39 para releases e atualização) são indicativas de tendência, mas não estatisticamente significativas dado o número reduzido de linguagens analisadas (n=10). O padrão observado sugere que o tipo de projeto — mais do que a linguagem — é o fator determinante: Rust e TypeScript lideram em PRs mergeadas apesar de serem menos frequentes na amostra, enquanto as métricas de release e atualização refletem escolhas de governança de cada projeto.
 
 **Engajamento real vs. star-farming (RQ08 — bônus).** A hipótese de que repositórios suspeitos de star-farming apresentariam `fork_star_ratio` mais baixo não se confirmou: a mediana do grupo suspeito (0,1190) é ligeiramente superior à do restante da amostra (0,1144). Isso indica que `fork_star_ratio` sozinho não é um discriminador eficaz para esse fenômeno — parte dos repositórios desse grupo pode atrair curiosidade e forks genuínos mesmo com uma fração de estrelas inorgânicas, e o N pequeno (21 repositórios) amplifica a sensibilidade da mediana a casos extremos.
+
+**Correlação global entre métricas (inovação).** A matriz de correlação de Spearman calculada sobre todos os 1.000 repositórios (§4.10) revela três relações que conectam as RQs obrigatórias entre si: contribuição externa e frequência de atualização caminham juntas (ρ = −0,614 entre PRs e dias desde push); contribuição e frequência de releases também (ρ = 0,609); e estrelas e forks são moderadamente correlacionados (ρ = 0,611), o que é consistente com o resultado da RQ08. Essas relações, calculadas sobre N≈1.000, têm potência estatística suficiente para ser tratadas como evidência — diferentemente das correlações de RQ07 (n=10 linguagens).
 
 **Limitações e trabalhos futuros.** O estudo é transversal (snapshot de agosto de 2026) e não permite inferir causalidade. O limite hard de 1.000 resultados da API de busca do GitHub restringe a amostra aos repositórios de maior visibilidade, o que pode não representar o conjunto amplo de projetos open-source. Estudos longitudinais com séries temporais de stars, forks e commits poderiam revelar dinâmicas de popularidade mais ricas do que as captadas por um único snapshot.
 
