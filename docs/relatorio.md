@@ -371,7 +371,7 @@ A coleta foi realizada em **agosto de 2026** via API GraphQL do GitHub, cobrindo
 - **21 repositórios suspeitos de star-farming (2,1%):** idade < 1,5 anos e > 100 mil estrelas. Mantidos na amostra; analisados separadamente em RQ01 (seção 4.2) e RQ08 (seção 4.4).
 - **280 repositórios sem releases formais (28,0%):** `releases_count = 0`; mantidos na amostra de RQ03, contribuem para a mediana e são discutidos na seção 4.5.
 
-Não foram identificadas duplicidades entre os campos coletados via GraphQL, conforme validação cruzada com a REST API documentada nos arquivos `docs/validacoes/`. **Exceção conhecida:** o campo `releases.totalCount` da API GraphQL do GitHub satura em 1.000 para repositórios com volume muito alto de releases — 21 repositórios da amostra (2,1%) atingem esse teto e têm contagem real maior que a reportada (ex.: `home-assistant/core` reporta 1.000 via GraphQL, mas possui 1.633 releases reais via paginação REST). Esses 21 valores devem ser lidos como piso, não como contagem exata — ver discussão em §4.5 (RQ03).
+Não foram identificadas duplicidades entre os campos coletados via GraphQL, conforme validação cruzada com a REST API documentada nos arquivos `docs/validacoes/`. **Exceção conhecida:** o campo `releases.totalCount` da API GraphQL do GitHub satura em 1.000 para repositórios com volume muito alto de releases — 21 repositórios da amostra (2,1%) atingem esse teto e têm contagem real maior que a reportada (ex.: `home-assistant/core` reporta 1.000 via GraphQL — o valor real é maior, mas não foi objeto de validação automatizada nesta entrega). Esses 21 valores devem ser lidos como piso, não como contagem exata — ver discussão em §4.5 (RQ03).
 
 As visualizações interativas (histogramas, box plots e gráficos de dispersão) referenciadas em cada RQ foram geradas em S03 e estão disponíveis nos arquivos HTML em `docs/visualizacoes/`.
 
@@ -510,18 +510,18 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 
 | # | Linguagem | # | Linguagem |
 |---|---|---|---|
-| 1 | Python | 11 | Delphi |
-| 2 | C | 12 | MATLAB |
+| 1 | Python | 11 | Delphi/Object Pascal |
+| 2 | C | 12 | Scratch |
 | 3 | C++ | 13 | PHP |
 | 4 | Java | 14 | Go |
-| 5 | C# | 15 | Swift |
-| 6 | JavaScript | 16 | R |
-| 7 | Visual Basic | 17 | Scratch |
-| 8 | Fortran | 18 | Ruby |
-| 9 | SQL | 19 | COBOL |
-| 10 | Rust | 20 | Assembly |
+| 5 | C# | 15 | Fortran |
+| 6 | JavaScript | 16 | Ruby |
+| 7 | Visual Basic | 17 | Swift |
+| 8 | SQL | 18 | Perl |
+| 9 | R | 19 | COBOL |
+| 10 | Rust | 20 | Assembly language |
 
-Das 20, as 12 presentes na amostra são: Python, C, C++, Java, JavaScript, Go, Rust, PHP, Swift, Ruby, Assembly e C#.
+Das 20, as 12 presentes na amostra são: Python, C, C++, Java, JavaScript, Go, Rust, PHP, Swift, Ruby, Assembly language e C#.
 
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
 
@@ -551,7 +551,7 @@ Das 20, as 12 presentes na amostra são: Python, C, C++, Java, JavaScript, Go, R
 
 ### 4.9 RQ07 — Linguagem vs. contribuição, releases e atualização
 
-**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. Spearman foi escolhido sobre Pearson por ser robusto à forte assimetria e aos outliers presentes nas distribuições de PRs e releases (documentado em `docs/analises/analise-correlacao.md`). A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
+**Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. A popularidade **não** foi operacionalizada via posição TIOBE (como em RQ05) porque o ranking TIOBE é uma variável ordinal — inadequada para correlação de Spearman, que requer dados numéricos contínuos ou ordinais com interpretação de distância; a contagem de repositórios na amostra supre essa exigência. Spearman foi escolhido sobre Pearson por ser robusto à forte assimetria e aos outliers presentes nas distribuições de PRs e releases (documentado em `docs/analises/analise-correlacao.md`). A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
 
 | Linguagem | Nº de repos | Mediana de PRs mergeadas (RQ02) | Mediana de releases (RQ03) | Mediana de dias desde último push (RQ04) |
 |---|---|---|---|---|
