@@ -104,10 +104,18 @@ def _conclude(stats: list[LanguageStats]) -> str:
     r_upd = spearman(upd_vals)
 
     def interpret(r):
+        """Mesma faixa de qualificadores do Relatório Final (§4.8) e de
+        `report_dashboard.py::rq07_conclusion` — corte em 0,5 decide
+        "sem correlação clara" vs. positiva/negativa, e "moderada" (0,5-0,7)
+        ou "forte" (>0,7) qualifica a força."""
+        if r > 0.7:
+            return "correlação positiva forte"
         if r > 0.5:
-            return "correlação positiva"
+            return "correlação positiva moderada"
+        if r < -0.7:
+            return "correlação negativa forte"
         if r < -0.5:
-            return "correlação negativa"
+            return "correlação negativa moderada"
         return "sem correlação clara"
 
     lines = [

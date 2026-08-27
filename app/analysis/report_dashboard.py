@@ -46,6 +46,15 @@ _TIOBE_COLOR = "#1f77b4"
 _NON_TIOBE_COLOR = "#ff7f0e"
 
 
+def _fmt_br(value: float, decimals: int = 2) -> str:
+    """Formata número no padrão brasileiro (vírgula decimal, ponto de milhar).
+
+    Usado em todo texto visível do dashboard (KPIs, legendas, anotações de
+    gráfico) para não misturar formatação en-US com o restante do relatório,
+    que usa vírgula decimal em português."""
+    return f"{value:,.{decimals}f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+
+
 def tiobe_position(language: str | None) -> int | None:
     if not language:
         return None
@@ -186,16 +195,16 @@ _KPI_CARD_TEMPLATE = """\
 
 def render_kpi_cards(k: dict) -> str:
     cards = [
-        (f"{k['total_repos']:,}".replace(",", "."), "Repositórios analisados"),
-        (f"{k['total_stars']:,}".replace(",", "."), "Estrelas somadas"),
-        (f"{k['median_age']:.1f} anos", "Idade mediana (RQ01)"),
-        (f"{k['median_prs']:.0f}", "PRs mergeadas — mediana (RQ02)"),
-        (f"{k['median_releases']:.0f}", "Releases — mediana (RQ03)"),
-        (f"{k['median_recency_days']:.1f} dias", "Desde último push — mediana (RQ04)"),
-        (f"{k['unique_languages']}", f"Linguagens distintas ({k['top_lang']} lidera, {k['top_lang_pct']:.1f}%)"),
-        (f"{k['median_closed_ratio']:.2f}", "Razão de issues fechadas — mediana (RQ06)"),
-        (f"{k['median_fork_ratio']:.3f}", "Razão forks/estrelas — mediana (RQ08)"),
-        (f"{k['farming_count']} ({k['farming_pct']:.1f}%)", "Suspeitos de star-farming"),
+        (_fmt_br(k['total_repos'], 0), "Repositórios analisados"),
+        (_fmt_br(k['total_stars'], 0), "Estrelas somadas"),
+        (f"{_fmt_br(k['median_age'], 1)} anos", "Idade mediana (RQ01)"),
+        (_fmt_br(k['median_prs'], 0), "PRs mergeadas — mediana (RQ02)"),
+        (_fmt_br(k['median_releases'], 1), "Releases — mediana (RQ03)"),
+        (f"{_fmt_br(k['median_recency_days'], 1)} dias", "Desde último push — mediana (RQ04)"),
+        (f"{k['unique_languages']}", f"Linguagens distintas ({k['top_lang']} lidera, {_fmt_br(k['top_lang_pct'], 1)}%)"),
+        (_fmt_br(k['median_closed_ratio'], 2), "Razão de issues fechadas — mediana (RQ06)"),
+        (_fmt_br(k['median_fork_ratio'], 3), "Razão forks/estrelas — mediana (RQ08)"),
+        (f"{k['farming_count']} ({_fmt_br(k['farming_pct'], 1)}%)", "Suspeitos de star-farming"),
     ]
     return "\n".join(_KPI_CARD_TEMPLATE.format(value=v, label=l) for v, l in cards)
 
@@ -205,7 +214,7 @@ def build_fig_rq01_histogram(summary: Summary, ages: list[float]) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=ages, nbinsx=30, marker_color=_RQ01_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=summary.median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.2f} anos", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 2)} anos", annotation_position="top right")
     fig.update_layout(title="RQ01 — Distribuição da idade dos repositórios",
                        xaxis_title="Idade (anos)", yaxis_title="Número de repositórios", bargap=0.05)
     return fig
@@ -217,7 +226,7 @@ def build_fig_rq02_histogram(summary: Summary, prs: list[float]) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=log_prs, nbinsx=40, marker_color=_RQ02_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=log_median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.0f} PRs", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 0)} PRs", annotation_position="top right")
     fig.update_layout(title="RQ02 — Distribuição de pull requests aceitas (escala log10)",
                        xaxis_title="log10(PRs aceitas + 1)", yaxis_title="Número de repositórios", bargap=0.05)
     return fig
@@ -238,7 +247,7 @@ def build_fig_star_farming_scatter(rows: list[dict]) -> go.Figure:
     fig.add_trace(go.Scatter(x=normal_x, y=normal_y, mode="markers", name="Demais repositórios",
                               marker=dict(color=_RQ01_COLOR, size=6, opacity=0.5), text=normal_text))
     fig.add_trace(go.Scatter(x=farming_x, y=farming_y, mode="markers",
-                              name=f"Idade < {STAR_FARMING_AGE_YEARS}a e > {STAR_FARMING_STARGAZERS:,} estrelas",
+                              name=f"Idade < {_fmt_br(STAR_FARMING_AGE_YEARS, 1)}a e > {_fmt_br(STAR_FARMING_STARGAZERS, 0)} estrelas",
                               marker=dict(color=_FARMING_COLOR, size=8), text=farming_text))
     fig.update_layout(title="RQ01 — Idade vs. estrelas (destaque star-farming)",
                        xaxis_title="Idade (anos)", yaxis_title="Estrelas",
@@ -253,7 +262,7 @@ def build_fig_rq03_histogram(summary: Summary, releases: list[float]) -> go.Figu
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=log_releases, nbinsx=40, marker_color=_RQ03_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=log_median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.0f} releases", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 1)} releases", annotation_position="top right")
     fig.update_layout(title="RQ03 — Distribuição do total de releases (escala log10)",
                        xaxis_title="log10(releases + 1)", yaxis_title="Número de repositórios", bargap=0.05)
     return fig
@@ -265,7 +274,7 @@ def build_fig_rq04_histogram(summary: Summary, days: list[float]) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=log_days, nbinsx=40, marker_color=_RQ04_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=log_median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.1f} dias", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 1)} dias", annotation_position="top right")
     fig.update_layout(title="RQ04 — Dias desde a última atualização (escala log10)",
                        xaxis_title="log10(dias desde último push + 1)", yaxis_title="Número de repositórios", bargap=0.05)
     return fig
@@ -312,7 +321,7 @@ def build_fig_rq06_histogram(summary: Summary, ratios: list[float]) -> go.Figure
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=ratios, nbinsx=30, marker_color=_RQ06_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=summary.median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.4f}", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 4)}", annotation_position="top right")
     fig.update_layout(title="RQ06 — Distribuição da razão de issues fechadas",
                        xaxis_title="Razão issues fechadas / total", yaxis_title="Número de repositórios", bargap=0.05)
     return fig
@@ -386,17 +395,25 @@ def rq07_conclusion(stats: list[LanguageStats]) -> str:
     r_upd = _spearman_rank([-s.median_days_since_push for s in stats])
 
     def interpret(r: float) -> str:
+        """Mesma faixa de qualificadores usada no Relatório Final (§4.8): o
+        corte em 0,5 decide "sem correlação clara" vs. positiva/negativa, e a
+        partir daí "moderada" (0,5–0,7) ou "forte" (>0,7) qualifica a força,
+        no lugar de um rótulo genérico "correlação positiva/negativa" sem grau."""
+        if r > 0.7:
+            return "correlação positiva forte"
         if r > 0.5:
-            return "correlação positiva"
+            return "correlação positiva moderada"
+        if r < -0.7:
+            return "correlação negativa forte"
         if r < -0.5:
-            return "correlação negativa"
+            return "correlação negativa moderada"
         return "sem correlação clara"
 
     return (
         f"Correlação de Spearman entre popularidade da linguagem (nº de repos na amostra) e cada métrica — "
-        f"PRs mergeadas: ρ = {r_prs:.2f} ({interpret(r_prs)}); "
-        f"releases: ρ = {r_rel:.2f} ({interpret(r_rel)}); "
-        f"atualização (menos dias = mais atualizado): ρ = {r_upd:.2f} ({interpret(r_upd)})."
+        f"PRs mergeadas: ρ = {_fmt_br(r_prs, 2)} ({interpret(r_prs)}); "
+        f"releases: ρ = {_fmt_br(r_rel, 2)} ({interpret(r_rel)}); "
+        f"atualização (menos dias = mais atualizado): ρ = {_fmt_br(r_upd, 2)} ({interpret(r_upd)})."
     )
 
 
@@ -405,7 +422,7 @@ def build_fig_rq08_histogram(summary: Summary, ratios: list[float]) -> go.Figure
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=ratios, nbinsx=30, marker_color=_RQ08_COLOR, opacity=0.75, name="Distribuição"))
     fig.add_vline(x=summary.median, line_dash="dash", line_color="red",
-                  annotation_text=f"Mediana = {summary.median:.4f}", annotation_position="top right")
+                  annotation_text=f"Mediana = {_fmt_br(summary.median, 4)}", annotation_position="top right")
     fig.update_layout(title="RQ08 — Distribuição de fork_star_ratio (bônus)",
                        xaxis_title="fork_star_ratio (fork_count / stargazer_count)",
                        yaxis_title="Número de repositórios", bargap=0.05)
@@ -416,7 +433,7 @@ def build_fig_rq08_group_comparison(rows: list[dict]) -> go.Figure:
     farming_ratios = [r["fork_star_ratio"] for r in rows if r["fork_star_ratio"] is not None and is_star_farming(r)]
     rest_ratios = [r["fork_star_ratio"] for r in rows if r["fork_star_ratio"] is not None and not is_star_farming(r)]
     fig = go.Figure()
-    fig.add_trace(go.Box(y=farming_ratios, name=f"Star-farming (< {STAR_FARMING_AGE_YEARS}a, > {STAR_FARMING_STARGAZERS:,}⭐)",
+    fig.add_trace(go.Box(y=farming_ratios, name=f"Star-farming (< {_fmt_br(STAR_FARMING_AGE_YEARS, 1)}a, > {_fmt_br(STAR_FARMING_STARGAZERS, 0)}⭐)",
                           marker_color=_FARMING_COLOR, boxmean=True))
     fig.add_trace(go.Box(y=rest_ratios, name="Resto da amostra", marker_color=_REST_COLOR, boxmean=True))
     fig.update_layout(title="RQ08 — fork_star_ratio: star-farming vs. resto da amostra",
@@ -437,7 +454,7 @@ def _read_matrix_csv(path: Path) -> tuple[list[str], list[list[float | None]]]:
 
 def build_correlation_heatmap(metrics: list[str], matrix: list[list[float | None]], title: str) -> go.Figure:
     labels = [METRIC_LABELS.get(m, m) for m in metrics]
-    text = [["" if v is None else f"{v:.2f}" for v in row] for row in matrix]
+    text = [["" if v is None else _fmt_br(v, 2) for v in row] for row in matrix]
     fig = go.Figure(go.Heatmap(
         z=matrix, x=labels, y=labels, zmin=-1, zmax=1, colorscale="RdBu", reversescale=True,
         text=text, texttemplate="%{text}", colorbar_title="r",
@@ -461,22 +478,25 @@ def top_correlation_pairs(metrics: list[str], matrix: list[list[float | None]], 
 
 
 _TABLE_COLUMNS = [
-    ("label", "Repositório", "str"),
-    ("primary_language", "Linguagem", "str"),
-    ("stargazer_count", "Estrelas", "num"),
-    ("fork_count", "Forks", "num"),
-    ("merged_pull_requests", "PRs mergeadas", "num"),
-    ("releases_count", "Releases", "num"),
-    ("age_years", "Idade (anos)", "num"),
-    ("closed_issues_ratio", "Razão issues fechadas", "num"),
-    ("fork_star_ratio", "fork/estrela", "num"),
+    # (chave, rótulo, tipo, casas decimais reais do dado — None para colunas sem
+    # casas decimais ou onde o número já é sempre inteiro; usado pelo JS da
+    # tabela para não exibir precisão maior do que a que o dado realmente tem)
+    ("label", "Repositório", "str", None),
+    ("primary_language", "Linguagem", "str", None),
+    ("stargazer_count", "Estrelas", "num", 0),
+    ("fork_count", "Forks", "num", 0),
+    ("merged_pull_requests", "PRs mergeadas", "num", 0),
+    ("releases_count", "Releases", "num", 0),
+    ("age_years", "Idade (anos)", "num", 1),
+    ("closed_issues_ratio", "Razão issues fechadas", "num", 4),
+    ("fork_star_ratio", "fork/estrela", "num", 4),
 ]
 
 
 def build_repo_table_data(rows: list[dict]) -> list[list]:
     data = []
     for r in sorted(rows, key=lambda r: r["stargazer_count"] or 0, reverse=True):
-        data.append([r.get(key) for key, _, _ in _TABLE_COLUMNS])
+        data.append([r.get(key) for key, _, _, _ in _TABLE_COLUMNS])
     return data
 
 
@@ -524,7 +544,7 @@ def render_html(rows: list[dict]) -> str:
       <input id="repo-search" type="text" placeholder="Buscar por repositório ou linguagem..." class="search-box">
       <div class="table-wrap">
         <table id="repo-table">
-          <thead><tr>{"".join(f'<th data-col="{i}" data-type="{t}">{label}</th>' for i, (_, label, t) in enumerate(_TABLE_COLUMNS))}</tr></thead>
+          <thead><tr>{"".join(f'<th data-col="{i}" data-type="{t}">{label}</th>' for i, (_, label, t, _) in enumerate(_TABLE_COLUMNS))}</tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -535,7 +555,7 @@ def render_html(rows: list[dict]) -> str:
     rq01_02 = "\n".join([
         _CHART_SECTION.format(title="RQ01 — Idade do repositório (histograma)",
             body="Histograma da idade em anos, calculada a partir da data de criação. A mediana observada é "
-                 f"{age_summary.median:.2f} anos, bem acima do limiar de 3 anos previsto na hipótese.",
+                 f"{_fmt_br(age_summary.median, 2)} anos, bem acima do limiar de 3 anos previsto na hipótese.",
             chart=_fig_to_div(build_fig_rq01_histogram(age_summary, ages), "rq01-hist")),
         _CHART_SECTION.format(title="RQ01 — Idade do repositório (box plot)",
             body="Box plot resumindo Q1, mediana, Q3 e amplitude da idade dos repositórios.",
@@ -544,12 +564,12 @@ def render_html(rows: list[dict]) -> str:
                 "rq01-box")),
         _CHART_SECTION.format(title="RQ01 — Idade vs. estrelas (star-farming)",
             body=f"Dispersão idade × estrelas. Em vermelho, os {kpis['farming_count']} repositórios "
-                 f"(idade < {STAR_FARMING_AGE_YEARS} anos e mais de {STAR_FARMING_STARGAZERS:,} estrelas) "
+                 f"(idade < {_fmt_br(STAR_FARMING_AGE_YEARS, 1)} anos e mais de {_fmt_br(STAR_FARMING_STARGAZERS, 0)} estrelas) "
                  "suspeitos de star-farming/hype identificados na análise.",
             chart=_fig_to_div(build_fig_star_farming_scatter(rows), "rq01-scatter")),
         _CHART_SECTION.format(title="RQ02 — Pull requests aceitas (histograma)",
             body="Histograma em escala log10, dada a forte assimetria da distribuição. A linha tracejada marca "
-                 f"a mediana ({prs_summary.median:.0f} PRs).",
+                 f"a mediana ({_fmt_br(prs_summary.median, 0)} PRs).",
             chart=_fig_to_div(build_fig_rq02_histogram(prs_summary, prs), "rq02-hist")),
         _CHART_SECTION.format(title="RQ02 — Pull requests aceitas (box plot)",
             body="Box plot em escala linear — a distância entre mediana e máximo evidencia a assimetria à direita.",
@@ -560,7 +580,7 @@ def render_html(rows: list[dict]) -> str:
 
     rq03_04 = "\n".join([
         _CHART_SECTION.format(title="RQ03 — Total de releases (histograma)",
-            body=f"Histograma em escala log10. Mediana de {releases_summary.median:.0f} releases; "
+            body=f"Histograma em escala log10. Mediana de {_fmt_br(releases_summary.median, 1)} releases; "
                  f"{sum(1 for r in rows if r['releases_count'] == 0)} repositórios não possuem releases formais.",
             chart=_fig_to_div(build_fig_rq03_histogram(releases_summary, releases), "rq03-hist")),
         _CHART_SECTION.format(title="RQ03 — Total de releases (box plot)",
@@ -569,7 +589,7 @@ def render_html(rows: list[dict]) -> str:
                 title="RQ03 — Box plot do total de releases", yaxis_title="Total de releases", showlegend=False),
                 "rq03-box")),
         _CHART_SECTION.format(title="RQ04 — Dias desde a última atualização (histograma)",
-            body=f"Histograma em escala log10. Mediana de {recency_summary.median:.1f} dias desde o último push.",
+            body=f"Histograma em escala log10. Mediana de {_fmt_br(recency_summary.median, 1)} dias desde o último push.",
             chart=_fig_to_div(build_fig_rq04_histogram(recency_summary, recency_days), "rq04-hist")),
         _CHART_SECTION.format(title="RQ04 — Dias desde a última atualização (box plot)",
             body="Box plot dos dias desde o último push por repositório.",
@@ -584,10 +604,10 @@ def render_html(rows: list[dict]) -> str:
     rq05_06 = "\n".join([
         _CHART_SECTION.format(title="RQ05 — Linguagem primária",
             body=f"Distribuição das linguagens primárias. Azul = presente no TIOBE Top 20 (ago/2026); "
-                 f"laranja = fora do ranking. {kpis['no_lang_pct']:.1f}% dos repositórios não têm linguagem definida.",
+                 f"laranja = fora do ranking. {_fmt_br(kpis['no_lang_pct'], 1)}% dos repositórios não têm linguagem definida.",
             chart=_fig_to_div(build_fig_rq05_languages(rows), "rq05-bar")),
         _CHART_SECTION.format(title="RQ06 — Razão de issues fechadas (histograma)",
-            body=f"Histograma da razão issues fechadas / total. Mediana de {closed_ratio_summary.median:.4f}.",
+            body=f"Histograma da razão issues fechadas / total. Mediana de {_fmt_br(closed_ratio_summary.median, 4)}.",
             chart=_fig_to_div(build_fig_rq06_histogram(closed_ratio_summary, closed_ratios), "rq06-hist")),
         _CHART_SECTION.format(title="RQ06 — Razão de issues fechadas (box plot)",
             body="Box plot resumindo Q1, mediana, Q3 e amplitude da razão de issues fechadas.",
@@ -598,7 +618,9 @@ def render_html(rows: list[dict]) -> str:
 
     rq07_figs = build_figs_rq07(rq07_stats)
     rq07_bodies = [
-        "Mediana de PRs mergeadas por linguagem (top 10 por nº de repositórios na amostra, mínimo 10 repos por linguagem).",
+        "Mediana de PRs mergeadas por linguagem (top 10 por nº de repositórios na amostra, mínimo 10 repos por linguagem). "
+        "\"Popularidade da linguagem\" aqui é o nº de repositórios da própria amostra, não a posição no TIOBE Index "
+        "usada na RQ05 — ver docs/metodologia.md, seção RQ07.",
         "Mediana de releases por repositório, por linguagem.",
         "Mediana de dias desde o último push, por linguagem — valores menores indicam repositórios mais ativos.",
     ]
@@ -610,7 +632,7 @@ def render_html(rows: list[dict]) -> str:
 
     rq08 = "\n".join([
         _CHART_SECTION.format(title="RQ08 — fork_star_ratio (histograma, bônus)",
-            body=f"Histograma de fork_star_ratio. Mediana de {fork_ratio_summary.median:.4f}.",
+            body=f"Histograma de fork_star_ratio. Mediana de {_fmt_br(fork_ratio_summary.median, 4)}.",
             chart=_fig_to_div(build_fig_rq08_histogram(fork_ratio_summary, fork_ratios), "rq08-hist")),
         _CHART_SECTION.format(title="RQ08 — fork_star_ratio (box plot, bônus)",
             body="Box plot resumindo Q1, mediana, Q3 e amplitude de fork_star_ratio.",
@@ -624,10 +646,14 @@ def render_html(rows: list[dict]) -> str:
 
     top_pairs = top_correlation_pairs(spearman_metrics, spearman_matrix)
     pairs_rows = "".join(
-        f"<tr><td>{METRIC_LABELS.get(a, a)}</td><td>{METRIC_LABELS.get(b, b)}</td><td>{v:.3f}</td></tr>"
+        f"<tr><td>{METRIC_LABELS.get(a, a)}</td><td>{METRIC_LABELS.get(b, b)}</td><td>{_fmt_br(v, 3)}</td></tr>"
         for a, b, v in top_pairs
     )
     correlacao = f"""
+    <p class="chart-body"><strong>Análise exploratória complementar</strong> — não faz parte da árvore formal
+    Goal→Question→Metric da seção 2.1 do relatório (não responde a nenhuma RQ específica); entrega adicional do
+    grupo (Issue #34) para investigar relações entre as métricas coletadas além do que cada RQ pergunta
+    individualmente.</p>
     {_CHART_SECTION.format(title="Matriz de correlação — Spearman",
         body="Correlação de Spearman entre as métricas coletadas e derivadas. Menos sensível a outliers e assimetria.",
         chart=_fig_to_div(build_correlation_heatmap(spearman_metrics, spearman_matrix, "Spearman"), "corr-spearman"))}
@@ -661,7 +687,9 @@ def render_html(rows: list[dict]) -> str:
     )
 
     table_data_json = json.dumps(build_repo_table_data(rows), ensure_ascii=False)
-    table_columns_json = json.dumps([{"key": k, "label": l, "type": t} for k, l, t in _TABLE_COLUMNS], ensure_ascii=False)
+    table_columns_json = json.dumps(
+        [{"key": k, "label": l, "type": t, "decimals": d} for k, l, t, d in _TABLE_COLUMNS], ensure_ascii=False
+    )
 
     plotly_cdn = '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>'
 
@@ -759,12 +787,11 @@ def render_html(rows: list[dict]) -> str:
     var searchInput = document.getElementById("repo-search");
     var sortState = {{ col: null, dir: 1 }};
 
-    function fmt(value, type) {{
+    function fmt(value, decimals) {{
       if (value === null || value === undefined) return "—";
-      if (type === "num") {{
-        return typeof value === "number" && !Number.isInteger(value) ? value.toFixed(4) : value;
-      }}
-      return value;
+      if (typeof value !== "number") return value;
+      if (Number.isInteger(value) || decimals === null || decimals === undefined) return String(value).replace(".", ",");
+      return value.toFixed(decimals).replace(".", ",");
     }}
 
     function render(data) {{
@@ -772,7 +799,7 @@ def render_html(rows: list[dict]) -> str:
       for (var i = 0; i < data.length; i++) {{
         html += "<tr>";
         for (var c = 0; c < columns.length; c++) {{
-          html += "<td>" + fmt(data[i][c], columns[c].type) + "</td>";
+          html += "<td>" + fmt(data[i][c], columns[c].decimals) + "</td>";
         }}
         html += "</tr>";
       }}
