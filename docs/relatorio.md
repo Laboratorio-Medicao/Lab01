@@ -421,37 +421,7 @@ Os gráficos abaixo mostram a distribuição de idade dos repositórios e a rela
 
 **Validação dos dados:** na amostra de oito repositórios, `mergedPullRequests.totalCount` coincidiu integralmente entre GraphQL e a paginação direta da REST API ([validacoes/validacao-rq01-rq02.md](validacoes/validacao-rq01-rq02.md)).
 
-### 4.4 RQ08 — Engajamento real: razão forks/estrelas (bônus)
-
-| Métrica | Valor |
-|---|---|
-| N | 1000 |
-| Mínimo | 0,0009 |
-| 1º quartil | 0,0772 |
-| **Mediana** | **0,1144** |
-| Média | 0,1458 |
-| 3º quartil | 0,1798 |
-| Máximo | 1,9449 |
-| Outliers altos (regra IQR 1,5×) | 53 |
-
-**Comparação star-farming vs. resto da amostra:**
-
-| Grupo | N | Mediana de `fork_star_ratio` |
-|---|---|---|
-| Star-farming (idade < 1,5a, > 100 mil⭐) | 21 | 0,1190 |
-| Resto da amostra | 979 | 0,1144 |
-
-**Visualização:** `docs/visualizacoes/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
-
-Os gráficos abaixo apresentam a distribuição da razão forks/estrelas e a comparação entre o grupo suspeito de star-farming e o restante da amostra, evidenciando a ausência de diferença expressiva entre os dois grupos.
-
-![Visualizações RQ08](visualizacoes/img-rq08.png)
-
-**Discussão hipótese vs. resultado:** a hipótese **não se confirma**. Esperava-se que o grupo suspeito de star-farming apresentasse `fork_star_ratio` sistematicamente mais baixo — sinal de que estrelas artificiais não geram forks proporcionais —, mas a mediana observada nesse grupo (0,1190) é, na verdade, igual ou ligeiramente **maior** que a do resto da amostra (0,1144). Isso não invalida o achado de star-farming em si (RQ01), que se apoia em critério independente (idade × estrelas), mas indica que `fork_star_ratio` sozinho não é um discriminador forte para esse grupo específico. Uma leitura possível é que parte dos repositórios nesse grupo (ligados ao hype de agentes de IA) atrai também curiosidade genuína — testes, estudo de código, tentativas de uso — que se traduz em forks reais, mesmo quando uma fração das estrelas não é orgânica; ou que o N pequeno (21 repositórios) torna a mediana desse grupo sensível a poucos casos extremos.
-
-**Validação dos dados:** na amostra de oito repositórios, `forkCount` coincidiu integralmente entre GraphQL e `forks_count` da REST API — 8/8 (100%) na execução de 2026-08-15 ([validacoes/validacao-rq08.md](validacoes/validacao-rq08.md)).
-
-### 4.5 RQ03 — Frequência de releases
+### 4.4 RQ03 — Frequência de releases
 
 | Métrica | Valor |
 |---|---|
@@ -476,7 +446,7 @@ Os gráficos abaixo ilustram a distribuição de releases e de dias desde o últ
 
 **Nota sobre o critério de confirmação:** diferente das demais RQs desta seção, a hipótese informal de RQ03 (seção 1) não fixou um limiar numérico prévio para "número moderado de releases" — é uma expectativa qualitativa sobre o formato da distribuição (assimétrica, com outliers de versionamento rigoroso e uma cauda de projetos sem releases formais). A confirmação acima é, portanto, um julgamento sobre esse padrão geral, não um teste contra um valor pré-registrado como em RQ01 (mediana > 3 anos) ou RQ06 (mediana > 0,5).
 
-### 4.6 RQ04 — Frequência de atualização
+### 4.5 RQ04 — Frequência de atualização
 
 | Métrica | Valor |
 |---|---|
@@ -499,7 +469,7 @@ Os gráficos abaixo ilustram a distribuição de releases e de dias desde o últ
 
 **Validação dos dados:** na amostra de oito repositórios, `releases_count` e `pushed_at` coincidiram integralmente entre GraphQL e REST ([validacoes/validacao-rq03-rq04.md](validacoes/validacao-rq03-rq04.md)). Ainda assim, `pushed_at` mede apenas o último push e não representa a frequência histórica de commits; as conclusões descrevem a amostra em uma data de referência e não estabelecem causalidade.
 
-### 4.7 RQ05 — Linguagens mais populares
+### 4.6 RQ05 — Linguagens mais populares
 
 **N:** 1000 | **Sem linguagem definida:** 87 (8,7%) | **Referência:** TIOBE Index, agosto de 2026
 
@@ -545,7 +515,7 @@ Os gráficos abaixo apresentam a distribuição de linguagens primárias na amos
 
 **Validação dos dados:** na amostra de oito repositórios, `primaryLanguage` coincidiu integralmente entre GraphQL e REST em todos os casos ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
-### 4.8 RQ06 — Percentual de issues fechadas
+### 4.7 RQ06 — Percentual de issues fechadas
 
 | Métrica | Valor |
 |---|---|
@@ -565,7 +535,7 @@ Os gráficos abaixo apresentam a distribuição de linguagens primárias na amos
 
 **Validação dos dados:** nas discrepâncias pontuais identificadas (`f/prompts.chat` e `Shubhamsaboo/awesome-llm-apps`), a divergência nas contagens de issues abertas entre GraphQL e REST é atribuída a atividade ocorrida entre as duas coletas — não a erro de coleta ([validacoes/validacao-rq05-rq06.md](validacoes/validacao-rq05-rq06.md)).
 
-### 4.9 RQ07 — Linguagem vs. contribuição, releases e atualização
+### 4.8 RQ07 — Linguagem vs. contribuição, releases e atualização
 
 **Metodologia:** mediana de cada métrica por linguagem; popularidade da linguagem operacionalizada pelo número de repositórios na amostra; correlação de Spearman (ρ) entre popularidade e cada mediana. A popularidade **não** foi operacionalizada via posição TIOBE (como em RQ05) porque o ranking TIOBE é uma variável ordinal — inadequada para correlação de Spearman, que requer dados numéricos contínuos ou ordinais com interpretação de distância; a contagem de repositórios na amostra supre essa exigência. Spearman foi escolhido sobre Pearson por ser robusto à forte assimetria e aos outliers presentes nas distribuições de PRs e releases (documentado em `docs/analises/analise-correlacao.md`). A mediana de "dias desde último push" usa `collected_at` de cada repositório como referência (mesmo critério de RQ01/RQ04, não a data de execução do script).
 
@@ -597,6 +567,36 @@ Os gráficos abaixo apresentam a distribuição de linguagens primárias na amos
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráficos de barras comparando as medianas por linguagem para cada métrica.
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. Não há evidência consistente de que linguagens mais populares recebam mais contribuição, releases ou atualizações de forma simultânea. As correlações de Spearman calculadas sobre as 10 linguagens mais frequentes apontam uma tendência positiva moderada com PRs mergeadas (ρ = 0,52) e tendências fracas com releases e atualização (ρ = 0,39 em ambas) — mas, dado o tamanho amostral reduzido (n=10), nenhum valor é estatisticamente significativo a α=0,05, de modo que os resultados são tratados como indicativos de padrão, não como evidência confirmatória definitiva. A interpretação qualitativa, ainda assim, é coerente com a hipótese: Python, a linguagem mais representada, tem mediana de PRs (560) muito inferior à de Rust (2.491) e TypeScript (1.996,5), sugerindo que o tipo de projeto importa mais do que a popularidade da linguagem em si — Rust e TypeScript estão associados a ferramentas e frameworks que naturalmente atraem contribuição externa. Para releases e atualização, a tendência fraca confirma que essas métricas dependem da política de governança de cada projeto: Jupyter Notebook tem mediana de releases igual a zero por ser associado a notebooks de conteúdo estático que não seguem ciclo de release convencional.
+
+### 4.9 RQ08 — Engajamento real: razão forks/estrelas (bônus)
+
+| Métrica | Valor |
+|---|---|
+| N | 1000 |
+| Mínimo | 0,0009 |
+| 1º quartil | 0,0772 |
+| **Mediana** | **0,1144** |
+| Média | 0,1458 |
+| 3º quartil | 0,1798 |
+| Máximo | 1,9449 |
+| Outliers altos (regra IQR 1,5×) | 53 |
+
+**Comparação star-farming vs. resto da amostra:**
+
+| Grupo | N | Mediana de `fork_star_ratio` |
+|---|---|---|
+| Star-farming (idade < 1,5a, > 100 mil⭐) | 21 | 0,1190 |
+| Resto da amostra | 979 | 0,1144 |
+
+**Visualização:** `docs/visualizacoes/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
+
+Os gráficos abaixo apresentam a distribuição da razão forks/estrelas e a comparação entre o grupo suspeito de star-farming e o restante da amostra, evidenciando a ausência de diferença expressiva entre os dois grupos.
+
+![Visualizações RQ08](visualizacoes/img-rq08.png)
+
+**Discussão hipótese vs. resultado:** a hipótese **não se confirma**. Esperava-se que o grupo suspeito de star-farming apresentasse `fork_star_ratio` sistematicamente mais baixo — sinal de que estrelas artificiais não geram forks proporcionais —, mas a mediana observada nesse grupo (0,1190) é, na verdade, igual ou ligeiramente **maior** que a do resto da amostra (0,1144). Isso não invalida o achado de star-farming em si (RQ01), que se apoia em critério independente (idade × estrelas), mas indica que `fork_star_ratio` sozinho não é um discriminador forte para esse grupo específico. Uma leitura possível é que parte dos repositórios nesse grupo (ligados ao hype de agentes de IA) atrai também curiosidade genuína — testes, estudo de código, tentativas de uso — que se traduz em forks reais, mesmo quando uma fração das estrelas não é orgânica; ou que o N pequeno (21 repositórios) torna a mediana desse grupo sensível a poucos casos extremos.
+
+**Validação dos dados:** na amostra de oito repositórios, `forkCount` coincidiu integralmente entre GraphQL e `forks_count` da REST API — 8/8 (100%) na execução de 2026-08-15 ([validacoes/validacao-rq08.md](validacoes/validacao-rq08.md)).
 
 ### 4.10 Matriz de Correlação Global
 
