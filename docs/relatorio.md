@@ -336,15 +336,19 @@ O grupo utilizou um **GitHub Projects v2** no formato Kanban com as seguintes co
 
 **RQ08 — Razão forks/estrelas como proxy de engajamento real**
 
-O grupo propôs uma métrica adicional não solicitada pelo enunciado: `fork_count / stargazer_count`, que diferencia popularidade passiva (estrelas — sinal de interesse) de engajamento ativo (forks — sinal de uso e intenção de contribuição). A hipótese é que repositórios suspeitos de star-farming apresentem razão forks/estrelas sistematicamente mais baixa do que o restante da amostra, pois estrelas compradas/automatizadas não geram forks orgânicos. O campo `forkCount` já estava disponível no mesmo nó GraphQL das demais RQs, sem custo adicional de coleta. A análise desta métrica sobre os 1.000 repositórios está prevista para S03.
+O grupo explorou a relação entre popularidade passiva e engajamento ativo através da métrica `fork_count / stargazer_count`, que diferencia interesse superficial (estrelas) de intenção real de uso e contribuição (forks). A hipótese era que repositórios suspeitos de star-farming apresentassem razão forks/estrelas sistematicamente mais baixa do que o restante da amostra, pois estrelas compradas/automatizadas não geram forks orgânicos. O campo `forkCount` já estava disponível no mesmo nó GraphQL das demais RQs, sem custo adicional de coleta. A análise sobre os 1.000 repositórios está na seção 4.9.
 
 **Arquitetura de coleta tolerante a falhas com RabbitMQ**
 
 Em vez de um script de coleta sequencial com `time.sleep` em caso de rate limit, o grupo implementou um sistema de fila de jobs com RabbitMQ (`app/src/queue/`): um producer publica o job inicial; cada consumer processa uma página, persiste os dados e enfileira o próximo job. Isso torna a coleta retomável após falhas ou rate limits sem reprocessar dados já salvos, e desacopla a lógica de paginação da lógica de persistência.
 
+**Banco de dados compartilhado com PostgreSQL/Supabase**
+
+Em vez de arquivos CSV locais por integrante, o grupo adotou um banco de dados PostgreSQL hospedado no Supabase como repositório central dos dados coletados. Isso eliminou a fragmentação de dados entre máquinas, permitiu coleta incremental retomável (cursor e total coletado salvos em tabela `collection_state`) e viabilizou as agregações por linguagem da RQ07 diretamente via SQL (`GROUP BY primary_language`), sem necessidade de scripts adicionais de consolidação.
+
 **Matriz de correlação global entre métricas**
 
-Como análise exploratória complementar, o grupo calculou a correlação de Spearman entre todas as métricas numéricas coletadas — estrelas, forks, PRs mergeadas, releases, issues, idade, dias desde último push, razão de issues fechadas e razão forks/estrelas — sobre os 1.000 repositórios da amostra. Os resultados estão em `docs/visualizacoes/report-correlacao.html` e são discutidos na seção 4.10.
+Como exploração complementar, o grupo calculou a correlação de Spearman entre todas as métricas numéricas — estrelas, forks, PRs mergeadas, releases, issues, idade, dias desde último push, razão de issues fechadas e razão forks/estrelas — sobre os 1.000 repositórios. Isso revelou relações que as RQs individuais não capturariam isoladamente, como a correlação entre contribuição externa e frequência de atualização (ρ = −0,614). Os resultados estão em `docs/visualizacoes/report-correlacao.html` e são discutidos na seção 4.10.
 
 ---
 
