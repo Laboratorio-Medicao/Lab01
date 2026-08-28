@@ -392,6 +392,10 @@ As visualizações interativas (histogramas, box plots e gráficos de dispersão
 
 **Visualização:** `docs/visualizacoes/report-rq01-rq02.html` — histograma de idade, box plot, e dispersão idade × estrelas com destaque para o grupo de star-farming.
 
+Os gráficos abaixo mostram a distribuição de idade dos repositórios e a relação entre idade e número de estrelas. O grupo suspeito de star-farming aparece destacado no gráfico de dispersão.
+
+![Visualizações RQ01 e RQ02](visualizacoes/img-rq01-rq02.png)
+
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A mediana observada (7,70 anos) fica bem acima do limiar de 3 anos previsto, confirmando que a popularidade da maioria dos repositórios é fruto de acúmulo orgânico ao longo de vários anos, não de picos recentes. A cauda de repositórios jovens existe como esperado, mas é pequena (2,1%) e concentrada no fenômeno de star-farming/hype de IA já antecipado na hipótese. Um ponto que **diverge** da expectativa inicial é a magnitude dessa cauda: em S01 (amostra de 100), o mesmo padrão aparecia em 16% dos casos — quase 8× a proporção observada na amostra completa. A leitura mais provável é viés de amostra pequena: o corte "top 100" tende a capturar desproporcionalmente os repositórios em ascensão mais recente e virótica, enquanto o "top 1.000" dilui esse efeito com projetos de cauda mais longa e histórico mais consolidado.
 
 **Validação dos dados:** na amostra de oito repositórios, `createdAt` coincidiu integralmente entre GraphQL e REST ([validacoes/validacao-rq01-rq02.md](validacoes/validacao-rq01-rq02.md)).
@@ -439,6 +443,10 @@ As visualizações interativas (histogramas, box plots e gráficos de dispersão
 
 **Visualização:** `docs/visualizacoes/report-rq08.html` — histograma, box plot, e box plot comparativo entre o grupo de star-farming e o resto da amostra.
 
+Os gráficos abaixo apresentam a distribuição da razão forks/estrelas e a comparação entre o grupo suspeito de star-farming e o restante da amostra, evidenciando a ausência de diferença expressiva entre os dois grupos.
+
+![Visualizações RQ08](visualizacoes/img-rq08.png)
+
 **Discussão hipótese vs. resultado:** a hipótese **não se confirma**. Esperava-se que o grupo suspeito de star-farming apresentasse `fork_star_ratio` sistematicamente mais baixo — sinal de que estrelas artificiais não geram forks proporcionais —, mas a mediana observada nesse grupo (0,1190) é, na verdade, igual ou ligeiramente **maior** que a do resto da amostra (0,1144). Isso não invalida o achado de star-farming em si (RQ01), que se apoia em critério independente (idade × estrelas), mas indica que `fork_star_ratio` sozinho não é um discriminador forte para esse grupo específico. Uma leitura possível é que parte dos repositórios nesse grupo (ligados ao hype de agentes de IA) atrai também curiosidade genuína — testes, estudo de código, tentativas de uso — que se traduz em forks reais, mesmo quando uma fração das estrelas não é orgânica; ou que o N pequeno (21 repositórios) torna a mediana desse grupo sensível a poucos casos extremos.
 
 **Validação dos dados:** na amostra de oito repositórios, `forkCount` coincidiu integralmente entre GraphQL e `forks_count` da REST API — 8/8 (100%) na execução de 2026-08-15 ([validacoes/validacao-rq08.md](validacoes/validacao-rq08.md)).
@@ -459,6 +467,10 @@ As visualizações interativas (histogramas, box plots e gráficos de dispersão
 **Sanidade da distribuição:** 280 repositórios (28,00%) não possuíam releases formais. Não foram identificados valores ausentes em `releases_count`. **Nota sobre o teto da API:** o campo `releases.totalCount` do GraphQL do GitHub satura em 1.000 — 21 repositórios da amostra (2,1%) atingem esse valor e têm contagem real superior (confirmado via paginação REST). O máximo reportado na tabela acima (1.000) e a média (127,35) são, portanto, valores conservadores; a mediana (39,50) não é afetada, pois os 21 repositórios capados estão todos acima do ponto médio da distribuição.
 
 **Visualização:** `docs/visualizacoes/report-rq03-rq04.html` — histograma em escala log10 e box plot do total de releases.
+
+Os gráficos abaixo ilustram a distribuição de releases e de dias desde o último push, evidenciando a forte assimetria à direita em ambas as métricas e a concentração da amostra em valores baixos de atualização.
+
+![Visualizações RQ03 e RQ04](visualizacoes/img-rq03-rq04.png)
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma**. A média (127,35) é muito superior à mediana (39,50), e o máximo registrado de 1.000 releases (teto da API — valor real é maior para 21 repositórios), combinado com 94 outliers altos, evidencia uma distribuição assimétrica à direita. O resultado também confirma que popularidade não implica necessariamente muitos releases: 28,00% dos repositórios não utilizam releases formais, possivelmente por adotarem entrega contínua ou por serem projetos de documentação, listas curadas e materiais de estudo. A métrica é uma contagem acumulada e, portanto, também pode favorecer projetos mais antigos.
 
@@ -524,6 +536,10 @@ Das 43 linguagens identificadas na amostra, **12 aparecem no top 20 do TIOBE**, 
 Das 20, as 12 presentes na amostra são: Python, C, C++, Java, JavaScript, Go, Rust, PHP, Swift, Ruby, Assembly language e C#.
 
 **Visualização:** `docs/visualizacoes/report-rq05-rq06-rq07.html` — gráfico de barras com distribuição de linguagens e marcação de presença/ausência no TIOBE.
+
+Os gráficos abaixo apresentam a distribuição de linguagens primárias na amostra, a razão de issues fechadas por repositório e as medianas das métricas de contribuição, releases e atualização agrupadas por linguagem.
+
+![Visualizações RQ05, RQ06 e RQ07](visualizacoes/img-rq05-rq06-rq07.png)
 
 **Discussão hipótese vs. resultado:** a hipótese **se confirma parcialmente**. Python no topo (22,9%, #1 no TIOBE) e TypeScript como principal exceção fora do ranking TIOBE foram exatamente os dois pontos centrais previstos. A previsão de C e C++ logo após JavaScript, porém, **não se confirma**: Go (4º na amostra, 7,6%) e Rust (5º na amostra, 5,7%) ocupam essas posições, refletindo a forte presença de projetos de infraestrutura moderna e sistemas de alto desempenho no topo do GitHub — domínios em que Go e Rust ganharam tração expressiva a partir de 2022. C++ (7º na amostra) e C (9º na amostra) aparecem, mas já atrás de Java. Essas posições referem-se ao ranking de frequência **na amostra coletada** (coluna "Posição" da tabela acima), não ao ranking do TIOBE Index — que, para essas quatro linguagens, é bem diferente (Go #14, Rust #10, C++ #3, C #2). O resultado reforça que o perfil do top 1.000 do GitHub é influenciado pelo crescimento recente de linguagens de sistemas modernas, além do domínio histórico esperado.
 
@@ -600,6 +616,10 @@ Como análise complementar às RQs do enunciado, o grupo calculou a correlação
 | `merged_pull_requests` | `releases_count` | 0,609 | 1.000 |
 
 **Visualização:** `docs/visualizacoes/report-correlacao.html` — matriz de calor completa (Spearman e Pearson para comparação).
+
+A matriz abaixo exibe a correlação de Spearman entre todas as métricas numéricas coletadas. Pares com maior correlação absoluta aparecem em tons mais escuros, facilitando a identificação das relações discutidas nesta seção.
+
+![Matriz de correlação global](visualizacoes/img-correlacao.png)
 
 **Discussão:** três relações merecem destaque por conectar os resultados das RQs obrigatórias entre si:
 
